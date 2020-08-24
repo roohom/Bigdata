@@ -29,7 +29,7 @@ public class TLCTaxiPayment extends Configured implements Tool {
         Job job = Job.getInstance(this.getConf(), "TLCPayment");
         job.setJarByClass(TLCTaxiPayment.class);
 
-        Path inputPath = new Path(args[0]);
+        Path inputPath = new Path("E:\\IDEAJ\\Bigdata\\datas\\TLCData");
         TextInputFormat.setInputPaths(job, inputPath);
 
         job.setMapperClass(TlcMapper.class);
@@ -40,7 +40,7 @@ public class TLCTaxiPayment extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(IntWritable.class);
 
-        Path outputPath = new Path(args[1]);
+        Path outputPath = new Path("E:\\IDEAJ\\Bigdata\\datas\\TLCDataOutput");
         FileSystem hdfs = FileSystem.get(this.getConf());
         if (hdfs.exists(outputPath)) {
             hdfs.delete(outputPath, true);
@@ -53,7 +53,7 @@ public class TLCTaxiPayment extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.set("fs.defaultFS", "hdfs://192.168.88.221:8020");
+//        conf.set("fs.defaultFS", "hdfs://192.168.88.221:8020");
         int status = ToolRunner.run(conf, new TLCTaxiPayment(), args);
         System.exit(status);
     }

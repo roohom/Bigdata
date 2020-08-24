@@ -1,4 +1,4 @@
-# 脑裂问题
+# MapReduce
 
 ## 形成
 
@@ -152,6 +152,139 @@ null 	NullWritable
 
 
 ## 编程模板
+
+
+
+## MR程序历史监控
+
+### 问题
+
+- 提交到yarn运行的程序，一旦yarn重启就看不到了
+- lLinux上通过yarn运行程序，运行失败没有明显的日志
+
+### JobHistoryServer
+
+- MapReduce专门设计的一个进程，
+
+### yarn日志聚集
+
+- 日志聚集：将yarn运行的所有程序的日志存储在HDFS上，进行统一的存储
+- 一般搭配JobHistoryServer使用，用来通过其访问程序的运行日志
+- 配置yarn-site.xml
+
+### 启动
+
+- 先启动HDFS 
+
+- 再启动JobHistoryServer
+
+  - 在node2启动
+
+    ~~~shell
+    sbin/mr-jobhistory-daemon.sh start historyserver
+    ~~~
+
+  - 开放端口
+
+    ~~~shell
+    http://192.168.88.222:19888/jobhistory
+    ~~~
+
+    
+
+## 分区与自定义分区
+
+### 问题
+
+- MapReduce编程：开发分布式程序，解决数据量过大，机器资源不足或者性能差的问题
+- 解决：
+  - input：会将处理的大量数据分成若干个部分，分片：split
+  - 分片规则：getSplit()方法
+  - Map：一个分片=启动一个MapTask进程来处理
+  - Shuffle
+    - 分组
+    - 排序
+    - 没有改变数据
+    - 输出
+  - Reduce：默认启动一个ReduceTask进程
+    - 一个进程处理所有的数据
+    - （数据量过大，负载过高，性能低，速度低）
+
+### 分区
+
+- 应用场景：Reduce处理的数据量非常高，影响性能，并且不影响结果的使用
+
+- 可以指定在Reduce阶段，配置启动多个Reduce
+  - 为了避免单个Reduce负载过高，影响性能
+  - 优点：程序Reduce阶段也是分布式执行的，更快的
+  - 缺点：一个ReduceTask进程会产生一个结果文件，最终会有多个结果文件
+- 本质：在Shuffle阶段会对每条K2 V2进行计算，得到这条K2 V2会被哪个Reduce进行处理
+  - 打标签，标记每条数据会被哪个ReduceTask处理
+  - 一个reduce一个分区
+  - 默认只有一个分区
+- 分区规则
+  - 默认规则：按照K2的Hash区域Reduce的个数/分区的个数
+    - 分区类的决定：默认的分区类：HashPartitioner
+    - 方法：getPartition(K2, V2, NumberOfReduce)
+    - 规则优点：只要K2相同，就会进入同一个Reduce
+    - 规则缺点：负载不均衡
+
+### 自定义分区
+
+- 需求：
+- 规则：
+  - 开发一个分区器：继承Partition类
+  - 重写getPartition方法
+- 实现：构建两个分区
+
+
+
+## 自定义数据类型
+
+### 自带数据类型
+
+- 只能使用Hadoop中的类型，不能使用普通的Java类型
+- Hadoop类型实现了序列化
+- 自带的数据类型
+  - Text
+  - IntWritable
+  - LongWritable
+  - ...
+
+### 自定义数据类型
+
+- Hadoop中提供了自己封装的Java bean的接口
+
+- 规则：
+
+  - 必须实现Writable接口
+
+  - 重写方法
+
+    - 定义属性
+    - 无参构造
+    - getter and setter
+    - toString
+    - write：序列化
+    - readFields：反序列化
+
+    > 注意：序列化和反序列化的顺序必须一致
+
+## 分类与排序
+
+### MapReduce程序分类
+
+- 五大阶段
+  - Input，Map，Shuffle，Reduce，Output
+  - Shuffle：排序
+  - 适合场景：**做分组聚合**
+- 三大阶段：
+  - input，Map，output
+  - 适合场景：不需要做分组聚合，一般是一对一的场景
+    - ETL：数据清洗
+      - 过滤：将不合法的数据，以及不需要的数据过滤
+      - 转换：将原始数据格式转换为目标格式
+      - 补全：将需要用到的数据补全(IP->国家、省份、城市->经纬度)
 
 
 
