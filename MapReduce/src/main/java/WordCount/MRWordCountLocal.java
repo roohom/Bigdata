@@ -18,7 +18,7 @@ import org.apache.hadoop.util.ToolRunner;
 import java.io.IOException;
 
 /**
- * @ClassName: WordCount.MRWordCount
+ * @ClassName: WordCount.SimpleMethod.MRWordCount
  * @Author: Roohom
  * @Function: 自定义开发实现WordCount
  * @Date: 2020/8/22 15:38
@@ -72,7 +72,7 @@ public class MRWordCountLocal extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.set("fs.defultFS","hdfs://192.168.88.221:8020");
+        conf.set("fs.defultFS", "hdfs://192.168.88.221:8020");
 
         int status = ToolRunner.run(conf, new MRWordCountLocal(), args);
         System.exit(status);
@@ -80,10 +80,8 @@ public class MRWordCountLocal extends Configured implements Tool {
 
 
     public static class WcMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
-
         Text outputKey = new Text();
-
-        IntWritable ouputValue = new IntWritable();
+        IntWritable ouputValue = new IntWritable(1);
 
         /**
          * Input 传递过来的每个KV调用一次map
@@ -103,7 +101,6 @@ public class MRWordCountLocal extends Configured implements Tool {
                 //将单词作为新的key，value恒为1
                 this.outputKey.set(word);
                 context.write(this.outputKey, this.ouputValue);
-
             }
         }
     }

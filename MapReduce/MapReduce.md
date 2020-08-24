@@ -1,5 +1,7 @@
 # MapReduce
 
+[TOC]
+
 ## 形成
 
 - 如果Active的ZKFC故障，导致ZK中的临时节点file1被删除
@@ -164,7 +166,8 @@ null 	NullWritable
 
 ### JobHistoryServer
 
-- MapReduce专门设计的一个进程，
+- MapReduce专门设计的一个进程jobhistoryserver用于记录在yarn上运行的MapReduce的程序，并关联对应的日志
+- 可以方便用户查看之前运行的程序的详细信息
 
 ### yarn日志聚集
 
@@ -220,7 +223,7 @@ null 	NullWritable
   - 缺点：一个ReduceTask进程会产生一个结果文件，最终会有多个结果文件
 - 本质：在Shuffle阶段会对每条K2 V2进行计算，得到这条K2 V2会被哪个Reduce进行处理
   - 打标签，标记每条数据会被哪个ReduceTask处理
-  - 一个reduce一个分区
+  - **一个Reduce对应于一个分区**
   - 默认只有一个分区
 - 分区规则
   - 默认规则：按照K2的Hash区域Reduce的个数/分区的个数
@@ -231,11 +234,56 @@ null 	NullWritable
 
 ### 自定义分区
 
-- 需求：
-- 规则：
-  - 开发一个分区器：继承Partition类
+- 需求：默认的Hash分区存在数据分配不均匀的问题，需要根据自己的需求决定分区的规则
+
+- 只要Reduce个数超过1个，在Shuffle阶段，对每个Map输出的K2 V2 都会调用getPartition方法，实现分区，决定了每条KV最终会被哪个Reduce处理
+
+- **如何自定义分区**：
+  
+  - 开发一个**分区器**：继承Partitioner类
   - 重写getPartition方法
-- 实现：构建两个分区
+    - getPartition方法需要三个参数分别是分别是K2,V2,和numReduce(int类型)
+    - K2 和V2分别是Map阶段的输出
+    - numRduce表示调用第几个Reduce
+    - numRduce的参数大小与`job.setNumReduceTasks(N);`设置的个数有关
+  
+- 实现示例：构建两个分区，浦东地区放入一个Reduce处理，其他的放入其他Reduce处理
+
+  ~~~java
+  //设置两个reduce,编号分别为0和1
+  job.setNumReduceTasks(2);
+  
+  /**
+   * @ClassName: UserPartition
+   * @Author: Roohom
+   * @Function: 自定义分区器
+   * @Date: 2020/8/24 12:22
+   * @Software: IntelliJ IDEA
+   */
+  public class UserPartition extends Partitioner<Text, IntWritable> {
+      String houseSource = "浦东";
+      /**
+       * Map阶段输出的每一条K2V2都会调用一次这个方法用于标记会被哪个reduce处理
+       *
+       * @param key         当前的K2
+       * @param intWritable 当前的V2
+       * @param i           是第几个Reduce
+       * @return 是否为浦东的标记
+       */
+      @Override
+      public int getPartition(Text key, IntWritable intWritable, int i) {
+          String region = key.toString();
+          if (houseSource.equals(region)) {
+              return 0;
+          } else {
+              //不是浦东的返回1
+              return 1;
+          }
+      }
+  }
+  ~~~
+
+  
 
 
 
@@ -249,6 +297,10 @@ null 	NullWritable
   - Text
   - IntWritable
   - LongWritable
+  - DoubkeWritable
+  - ByteWritable
+  - BooleanWritable
+  - NullWritable
   - ...
 
 ### 自定义数据类型
@@ -275,20 +327,78 @@ null 	NullWritable
 ### MapReduce程序分类
 
 - 五大阶段
+
   - Input，Map，Shuffle，Reduce，Output
   - Shuffle：排序
+    - 其本质是作比较，数据量特别大的情况下耗时耗资源
+    - 如果不需要应该被省去
   - 适合场景：**做分组聚合**
+
 - 三大阶段：
+
   - input，Map，output
-  - 适合场景：不需要做分组聚合，一般是一对一的场景
+
+  - 适合场景：**不需要做分组聚合**，一般是一对一的场景
+
     - ETL：数据清洗
       - 过滤：将不合法的数据，以及不需要的数据过滤
       - 转换：将原始数据格式转换为目标格式
       - 补全：将需要用到的数据补全(IP->国家、省份、城市->经纬度)
 
+  - 如何实现：
 
+    - 设置Reduce的个数为0，Map的结果就是最后的结果
 
+      ~~~java
+      job.setNumReduceTasks(0);
+      ~~~
 
+      
 
+### 排序
 
+#### 排序方式一
+
+- MapReduce的Shuffle过程中：会对Map输出的K2进行排序
+  - 会构建一个集合，将K2类型强转为一个排序类[比较器类]的对象，放入集合，用于排序
+    - **Hadoop中的所有类型，如果要作为Map输出的K2,经过shuffle，必须实现WritableComparable接口**
+      - 成为比较器的子类，重写一个比较器compare方法，能实现转换
+      - 在排序时，会调用这个对象的compareTo方法来实现同对象之间的比较
+  - 自定义数据类型：
+    - 实现Writable
+      - 三大阶段中Map输出的Key
+      - Map输出的key
+      - Reduce输出的Key
+      - Reduce输出的Value
+    - 实现WritableComparable
+      - Map输出的key
+      - Map输出的Value
+      - Reduce输出的Key
+      - Reduce输出的Value
+- 关键之处：
+  - **如果自定义的数据类型作为Map阶段输出的k2，就必须实现WritableComparable接口**
+
+#### 排序方式二
+
+- Shuffle中可以自定义排序器
+  - 默认：Shuffle中排序是调用K2自带的compareTo方法来实现排序
+    - 如果是自定义数据类型，直接在compareTo中方法中控制排序规则（`return`后加负号即可）
+    - 如果是官方自带的类型，默认都是升序的
+- 需求：希望使用官方自带的类型，但变成降序的结果
+- 实现：自定义排序比较器
+  - 注意：**排序比较器的优先级会大于数据类型自带的compareTo**
+  - **规则**：
+    - 开发一个类，继承WritableComparator
+    - 重写一个compareTo方法
+
+- 总的来说
+  - shuffle阶段：会对Map输出的Key进行排序
+    - 默认：会调用这个key自带的compareTo方法
+      - 自定义类型/Hadoop自带的类型 -> 实现WritableComparable接口
+      - 自定义类型：自己控制排序规则
+      - Hadoop自带类型：都是升序的
+    - 自定义排序规则：优先级大于默认规则
+      - 构造一个排序比较器
+        - 继承WritableComparator类
+        - 重写compareTo方法
 

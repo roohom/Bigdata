@@ -18,7 +18,7 @@ import org.apache.hadoop.util.ToolRunner;
 import java.io.IOException;
 
 /**
- * @ClassName: WordCount.MRWordCount
+ * @ClassName: WordCount.SimpleMethod.MRWordCount
  * @Author: Roohom
  * @Function: 自定义开发实现WordCount
  * @Date: 2020/8/22 15:38
@@ -29,7 +29,7 @@ public class MRWordCount extends Configured implements Tool {
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "userCount");
         job.setJarByClass(MRWordCount.class);
-        Path inputPath = new Path(args[0]);
+        Path inputPath = new Path("datas\\Wordcount\\wordcount.txt");
         TextInputFormat.setInputPaths(job, inputPath);
 
 
@@ -54,7 +54,7 @@ public class MRWordCount extends Configured implements Tool {
 
         //output
         job.setOutputFormatClass(TextOutputFormat.class);
-        Path outputPath = new Path(args[1]);
+        Path outputPath = new Path("datas\\Wordcount\\MRWordCountOut");
 
         //判断输出路径是否已存在(使用hdfs的JAVA API)
         FileSystem hdfs = FileSystem.get(this.getConf());
@@ -78,7 +78,7 @@ public class MRWordCount extends Configured implements Tool {
 
     public static class WcMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
         Text outputKey = new Text();
-        IntWritable ouputValue = new IntWritable();
+        IntWritable ouputValue = new IntWritable(1);
 
         /**
          * Input 传递过来的每个KV调用一次map
@@ -98,7 +98,6 @@ public class MRWordCount extends Configured implements Tool {
                 //将单词作为新的key，value恒为1
                 this.outputKey.set(word);
                 context.write(this.outputKey, this.ouputValue);
-
             }
         }
     }

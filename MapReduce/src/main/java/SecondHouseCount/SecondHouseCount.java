@@ -18,7 +18,7 @@ import org.apache.hadoop.util.ToolRunner;
 import java.io.IOException;
 
 /**
- * @ClassName: WordCount.MRWordCount
+ * @ClassName: WordCount.SimpleMethod.MRWordCount
  * @Author: Roohom
  * @Function: 自定义开发实现WordCount
  * @Date: 2020/8/22 15:38
