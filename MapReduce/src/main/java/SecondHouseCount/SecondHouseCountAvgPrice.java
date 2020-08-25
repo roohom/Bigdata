@@ -26,11 +26,12 @@ import java.io.IOException;
  */
 public class SecondHouseCountAvgPrice extends Configured implements Tool {
 
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "avgCount");
         job.setJarByClass(SecondHouseCountAvgPrice.class);
 
-        Path inputPath = new Path(args[0]);
+        Path inputPath = new Path("datas\\lianjia\\secondhouse.csv");
         TextInputFormat.setInputPaths(job, inputPath);
 
         //map
@@ -54,7 +55,7 @@ public class SecondHouseCountAvgPrice extends Configured implements Tool {
 
         //output
         job.setOutputFormatClass(TextOutputFormat.class);
-        Path outputPath = new Path(args[1]);
+        Path outputPath = new Path("datas\\HouseOutput\\TotalAvg");
 
         //判断输出路径是否已存在(使用hdfs的JAVA API)
         FileSystem hdfs = FileSystem.get(this.getConf());
@@ -72,12 +73,10 @@ public class SecondHouseCountAvgPrice extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.set("fs.defaultFS", "hdfs://192.168.88.221:8020");
-
+//        conf.set("fs.defaultFS", "hdfs://192.168.88.221:8020");
         int status = ToolRunner.run(conf, new SecondHouseCountAvgPrice(), args);
         System.exit(status);
     }
-
 
     public static class WcMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
@@ -111,11 +110,10 @@ public class SecondHouseCountAvgPrice extends Configured implements Tool {
 
         //定义输出的value
         IntWritable outputValue = new IntWritable();
-
         /**
          * shuffle分组排序以后的数据会进入reduce每一组数据/每种key会调用一次reduce
          *
-         * @param key     K2
+         * @param key     K2 地区字段
          * @param values  相同的K2对应的所有value
          * @param context
          * @throws IOException

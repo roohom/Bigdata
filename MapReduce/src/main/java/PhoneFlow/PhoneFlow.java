@@ -25,6 +25,7 @@ import java.io.IOException;
  * @Software: IntelliJ IDEA
  */
 public class PhoneFlow extends Configured implements Tool {
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "MRModel");
         job.setJarByClass(PhoneFlow.class);

@@ -35,8 +35,8 @@ public class SecondOrderAnother extends Configured implements Tool {
          * @param key     行的偏移量
          * @param value   行的内容
          * @param context 上下文对象
-         * @throws IOException
-         * @throws InterruptedException
+         * @throws IOException IO异常
+         * @throws InterruptedException 中断异常
          */
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -60,8 +60,8 @@ public class SecondOrderAnother extends Configured implements Tool {
          * @param key     自定义java bean
          * @param values  同样的键对应的值的迭代器
          * @param context 上下文对象
-         * @throws IOException
-         * @throws InterruptedException
+         * @throws IOException IO异常
+         * @throws InterruptedException 中断异常
          */
         @Override
         protected void reduce(CustomizeBean key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
@@ -77,6 +77,7 @@ public class SecondOrderAnother extends Configured implements Tool {
      * @return 返回结束成功与否标志
      * @throws Exception 抛出异常
      */
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf());
         job.setJarByClass(SecondOrderAnother.class);

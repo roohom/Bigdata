@@ -24,6 +24,7 @@ import java.io.IOException;
  * @Software: IntelliJ IDEA
  */
 public class MRModelTotal extends Configured implements Tool {
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "MRModel");
         job.setJarByClass(MRModelTotal.class);
@@ -56,6 +57,7 @@ public class MRModelTotal extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
+//        conf.set("fs.defaultFS","hdfs://192.168.88.221:8020");
         int status = ToolRunner.run(conf, new MRModelTotal(), args);
         System.exit(status);
     }

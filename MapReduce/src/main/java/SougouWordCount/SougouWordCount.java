@@ -25,6 +25,7 @@ import java.io.IOException;
  * @Software: IntelliJ IDEA
  */
 public class SougouWordCount extends Configured implements Tool {
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "SougouWordCount");
         job.setJarByClass(SougouWordCount.class);

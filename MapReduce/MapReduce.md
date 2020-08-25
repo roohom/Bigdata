@@ -226,11 +226,11 @@ null 	NullWritable
   - **一个Reduce对应于一个分区**
   - 默认只有一个分区
 - 分区规则
-  - 默认规则：按照K2的Hash区域Reduce的个数/分区的个数
+  - 默认规则：按照K2的Hash取余得到Reduce的个数/分区的个数
     - 分区类的决定：默认的分区类：HashPartitioner
     - 方法：getPartition(K2, V2, NumberOfReduce)
     - 规则优点：只要K2相同，就会进入同一个Reduce
-    - 规则缺点：负载不均衡
+    - 规则缺点：负载不均衡造成**数据倾斜**
 
 ### 自定义分区
 
@@ -391,14 +391,90 @@ null 	NullWritable
     - 开发一个类，继承WritableComparator
     - 重写一个compareTo方法
 
-- 总的来说
-  - shuffle阶段：会对Map输出的Key进行排序
-    - 默认：会调用这个key自带的compareTo方法
-      - 自定义类型/Hadoop自带的类型 -> 实现WritableComparable接口
-      - 自定义类型：自己控制排序规则
-      - Hadoop自带类型：都是升序的
-    - 自定义排序规则：优先级大于默认规则
-      - 构造一个排序比较器
-        - 继承WritableComparator类
-        - 重写compareTo方法
+
+#### 对于排序，总的来说
+
+> 在shuflle阶段，Hadoop官方已经规定了会对Map输出的Key进行排序
+>
+> 一种是官方默认提供的排序，都是升序的
+>
+> 一种是自定义排序，排序规则由你自己设定
+>
+> 无论是官方的排序还是自定义排序，都必须实现WritableComparable接口
+>
+> 这其中分两种情况：
+>
+> 第一种：对于官方自带的数据类型中的排序，已经实现了WritableComparable接口，并且预先定义了其排序规则，如果你想更改，就必须继承WritableComparator类进而重写compareTo方法，以达到自定义更改排序
+>
+> 第二种：对于自己定义的数据类型(自定义的Java Bean),是没有排序规则的，而官方要求了你必须实现排序规则，所以必须让该bean实现WritableComparable接口，实现序列化与反序列化，并且重写compareTo方法
+
+- shuffle阶段：会对Map输出的Key进行排序
+  - 默认：会调用这个key自带的compareTo方法
+    - 自定义类型/Hadoop自带的类型 -> 实现WritableComparable接口
+    - 自定义类型：自己控制排序规则
+    - Hadoop自带类型：都是升序的
+  - 自定义排序规则：优先级大于默认规则
+    - 构造一个排序比较器
+      - 继承WritableComparator类
+      - 重写compareTo方法
+
+## Shuffle过程
+
+### 功能
+
+- 分区：如果有多个Reduce，决定当前的每条数据会进入哪个Reduce进而被处理
+- 排序：调用了数据类型自带的conpareTo方法
+- 分组：按照K2进行分组
+
+### Shuffle中的优化
+
+#### Combiner
+
+Map端的聚合，为Reduce减负
+
+- 用于优化MapReduce中Shuffle过程，减轻Reduce负载，默认是不开启的
+
+- 不是所有的程序都可以使用Combiner
+
+- 开启（一般就是Reducer类）
+
+  ~~~java
+  job.setCombiner(CombinerClass.class)
+  ~~~
+
+- 被调用的位置：
+
+  - Map端的Shuffle过程
+    - Spill：内存中会进行排序，准备溢写，在溢写之前，如果开启了Combiner，先聚合后溢写
+    - Merge：每个MapTask会将所有的小文件进行合并并排序，如果开启Combiner，会先聚合
+  - Reduce端Shuffle：
+    - Merge：调用一次Combiner
+
+#### Compress
+
+应用：减少磁盘和网络IO
+
+- 在程序中设置压缩Compress
+
+  ~~~java
+  ~
+  ~~~
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

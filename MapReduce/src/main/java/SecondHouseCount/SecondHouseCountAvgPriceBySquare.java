@@ -26,6 +26,7 @@ import java.io.IOException;
  */
 public class SecondHouseCountAvgPriceBySquare extends Configured implements Tool {
 
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "avgCount");
         job.setJarByClass(SecondHouseCountAvgPriceBySquare.class);

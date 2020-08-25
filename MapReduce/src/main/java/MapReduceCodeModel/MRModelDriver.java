@@ -17,6 +17,7 @@ import org.apache.hadoop.util.ToolRunner;
  * @Software: IntelliJ IDEA
  */
 public class MRModelDriver extends Configured implements Tool {
+    @Override
     public int run(String[] args) throws Exception {
         //构建一个MapReduce程序
         //实例化MapReduce的Job对象

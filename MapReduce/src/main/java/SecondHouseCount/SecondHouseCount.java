@@ -26,6 +26,7 @@ import java.io.IOException;
  */
 public class SecondHouseCount extends Configured implements Tool {
 
+    @Override
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(this.getConf(), "userCount");
         job.setJarByClass(SecondHouseCount.class);

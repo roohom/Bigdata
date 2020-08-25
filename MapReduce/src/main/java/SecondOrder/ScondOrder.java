@@ -73,6 +73,9 @@ public class ScondOrder extends Configured implements Tool {
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(IntWritable.class);
 
+        //shuffle阶段
+        job.setSortComparatorClass(CustomizeSort.class);
+
         //reduce
         job.setReducerClass(myReducer.class);
         job.setOutputKeyClass(Text.class);

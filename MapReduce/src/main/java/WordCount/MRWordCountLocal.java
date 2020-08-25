@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * @ClassName: WordCount.SimpleMethod.MRWordCount
  * @Author: Roohom
- * @Function: 自定义开发实现WordCount
+ * @Function: 自定义开发实现WordCount，使用combiner
  * @Date: 2020/8/22 15:38
  * @Software: IntelliJ IDEA
  */
@@ -42,9 +42,11 @@ public class MRWordCountLocal extends Configured implements Tool {
         job.setMapOutputValueClass(IntWritable.class);
 
         //shuffle
+        //使用combiner
+        job.setCombinerClass(WcReducer.class);
 
         //reduce
-        job.setReducerClass(WcReduce.class);
+        job.setReducerClass(WcReducer.class);
         //设置reduce的输出key的类型，也就是K3的类型
         job.setOutputKeyClass(Text.class);
         //设置reduce的输出value的类型，也就是V3的类型
@@ -106,7 +108,7 @@ public class MRWordCountLocal extends Configured implements Tool {
     }
 
 
-    public static class WcReduce extends Reducer<Text, IntWritable, Text, IntWritable> {
+    public static class WcReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
 
         //定义输出的value
         IntWritable outputValue = new IntWritable();
@@ -134,5 +136,4 @@ public class MRWordCountLocal extends Configured implements Tool {
             context.write(key, this.outputValue);
         }
     }
-
 }
