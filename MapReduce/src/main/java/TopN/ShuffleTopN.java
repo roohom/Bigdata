@@ -1,13 +1,10 @@
 package TopN;
 
-import com.sun.org.apache.regexp.internal.RE;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -18,12 +15,12 @@ import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * @ClassName: ShuffleTopN
  * @Author: Roohom
- * @Function: 分析各地区房价最低价，升级写法，对房价的排序放在Reduce里
+ * @Function: 分析各地区房价最低价，最高价，平均价，总价，对房价的排序放在Reduce里
  * @Date: 2020/8/25 19:11
  * @Software: IntelliJ IDEA
  */
@@ -45,10 +42,16 @@ public class ShuffleTopN extends Configured implements Tool {
         }
     }
 
-    public static class topReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    public static class topReducer extends Reducer<Text, IntWritable, Text, Text> {
+        Text outputValue = new Text();
         Text outputKey = new Text();
-        IntWritable outputValue = new IntWritable();
-        TreeMap<Integer, String> houseMap = new TreeMap<>();
+        TreeSet<HouseBean> houseSet = new TreeSet<>(new Comparator<HouseBean>() {
+            @Override
+            public int compare(HouseBean o1, HouseBean o2) {
+                return Integer.valueOf(o2.getTotal()).compareTo(o1.getTotal());
+            }
+        });
+        TreeSet<Integer> priceSet = new TreeSet<>();
 
         /**
          * @param key     地区
@@ -59,16 +62,26 @@ public class ShuffleTopN extends Configured implements Tool {
          */
         @Override
         protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-
-            //把房价作为键，地区作为值装入TreeMap
+            //把所有的价格装进了treeset
+            int cnt = 0;
+            int sum = 0;
             for (IntWritable value : values) {
-                houseMap.put(value.get(), key.toString());
+                cnt++;
+                sum += value.get();
+                priceSet.add(value.get());
             }
-            for (Integer mapKey : houseMap.keySet()) {
-                this.outputValue.set(mapKey);
-                break;
-            }
-            context.write(key, this.outputValue);
+            HouseBean house = new HouseBean();
+            house.setAvg(sum / cnt);
+            //房价总价
+            house.setTotal(sum);
+            //房价最高值
+            house.setHighest(priceSet.last());
+            //房价最低值
+            house.setLowest(priceSet.first());
+            this.outputKey.set(house.toString());
+            context.write(this.outputKey, this.outputValue);
+            //清空价格set，以免和之前的重复
+            priceSet.clear();
         }
     }
 

@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * @ClassName: WordCount.SimpleMethod.MRWordCount
  * @Author: Roohom
- * @Function: 自定义开发实现WordCount
+ * @Function: 统计每个地区共有多少房
  * @Date: 2020/8/22 15:38
  * @Software: IntelliJ IDEA
  */

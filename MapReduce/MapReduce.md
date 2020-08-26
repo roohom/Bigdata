@@ -136,7 +136,7 @@
 
 ~~~java
 int 	intWritable
-String  Text
+String  Test
 double  DoubleWritable    
 null 	NullWritable
 ...    
@@ -260,7 +260,7 @@ null 	NullWritable
    * @Date: 2020/8/24 12:22
    * @Software: IntelliJ IDEA
    */
-  public class UserPartition extends Partitioner<Text, IntWritable> {
+  public class UserPartition extends Partitioner<Test, IntWritable> {
       String houseSource = "浦东";
       /**
        * Map阶段输出的每一条K2V2都会调用一次这个方法用于标记会被哪个reduce处理
@@ -271,7 +271,7 @@ null 	NullWritable
        * @return 是否为浦东的标记
        */
       @Override
-      public int getPartition(Text key, IntWritable intWritable, int i) {
+      public int getPartition(Test key, IntWritable intWritable, int i) {
           String region = key.toString();
           if (houseSource.equals(region)) {
               return 0;
@@ -294,7 +294,7 @@ null 	NullWritable
 - 只能使用Hadoop中的类型，不能使用普通的Java类型
 - Hadoop类型实现了序列化
 - 自带的数据类型
-  - Text
+  - Test
   - IntWritable
   - LongWritable
   - DoubkeWritable

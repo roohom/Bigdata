@@ -18,7 +18,7 @@ public class UserPartition extends Partitioner<Text, IntWritable> {
      *
      * @param key         当前的K2
      * @param intWritable 当前的V2
-     * @param i           是第几个Reduce
+     * @param i           个数
      * @return 是否为浦东的标记
      */
     @Override
