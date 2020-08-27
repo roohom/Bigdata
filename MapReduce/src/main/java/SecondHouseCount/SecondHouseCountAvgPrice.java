@@ -16,11 +16,14 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @ClassName: WordCount.SimpleMethod.MRWordCount
  * @Author: Roohom
- * @Function: 自定义开发实现WordCount
+ * @Function: 统计房价中每个地区总房数 平均房价 最高房价 最低房价
  * @Date: 2020/8/22 15:38
  * @Software: IntelliJ IDEA
  */
@@ -100,16 +103,16 @@ public class SecondHouseCountAvgPrice extends Configured implements Tool {
 
             String region = value.toString().split(",")[3];
             this.outputKey.set(region);
-
             context.write(this.outputKey, this.ouputValue);
         }
     }
 
-
-    public static class WcReduce extends Reducer<Text, IntWritable, Text, IntWritable> {
-
+    public static class WcReduce extends Reducer<Text, IntWritable, Text, Text> {
         //定义输出的value
-        IntWritable outputValue = new IntWritable();
+        Text outputValue = new Text();
+        Text outputKey = new Text();
+        List<Integer> prices = new ArrayList<>();
+
         /**
          * shuffle分组排序以后的数据会进入reduce每一组数据/每种key会调用一次reduce
          *
@@ -121,18 +124,32 @@ public class SecondHouseCountAvgPrice extends Configured implements Tool {
          */
         @Override
         protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-            //定义求和
+            //定义房价求和
             int sum = 0;
-            int i = 0;
+            //定义平均价
+            int avg;
+            //定义最高价
+            int max;
+            //定义最低价
+            int min;
+            //定义总房数
+            int cnt = 0;
             //迭代 取出当前key(region)对应的所有value
             for (IntWritable value : values) {
                 //累加
                 sum += value.get();
-                i++;
+                prices.add(value.get());
+                cnt++;
             }
             //将累加的结果作为输出的value
-            this.outputValue.set(sum / i);
-            context.write(key, this.outputValue);
+            Collections.sort(prices);
+            min = prices.get(0);
+            max = prices.get(prices.size() - 1);
+            avg = sum / prices.size();
+            outputValue.set("总房数:" + cnt + "\t" + "总价:" + sum + "\t" + "平均价:" + avg + "\t" + "最高价:" + max + "\t" + "最低价:" + min);
+            outputKey.set("地区:" + key);
+            context.write(outputKey, this.outputValue);
+            prices.clear();
         }
     }
 

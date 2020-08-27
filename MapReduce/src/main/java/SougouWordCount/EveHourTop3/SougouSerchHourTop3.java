@@ -139,7 +139,6 @@ public class SougouSerchHourTop3 extends Configured implements Tool {
         job.setMapOutputValueClass(IntWritable.class);
 
         //shuffle
-//        job.setGroupingComparatorClass(UserGroup.class);
 
         //reduce
         job.setReducerClass(SougouReducer.class);
@@ -179,7 +178,6 @@ public class SougouSerchHourTop3 extends Configured implements Tool {
         if (job.waitForCompletion(true)) {
             return jobTwo.waitForCompletion(true) ? 0 : -1;
         }
-
         return 0;
     }
 
