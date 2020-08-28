@@ -63,10 +63,10 @@ public class UserBean implements WritableComparable<UserBean> {
             {
                 return -this.getSearchItem().compareTo(o.getSearchItem());
             }
-            return -comp2;
+            return comp2;
         }
         //如果访问时间不同，直接返回
-        return comp;
+        return -comp;
     }
 
     @Override
@@ -88,4 +88,22 @@ public class UserBean implements WritableComparable<UserBean> {
         return this.getHour() + "\t" + this.getCount() + "\t" + this.getSearchItem();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        UserBean userBean = (UserBean) o;
+        return hour == userBean.hour &&
+                count == userBean.count &&
+                Objects.equals(searchItem, userBean.searchItem);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(hour, count, searchItem);
+    }
 }
