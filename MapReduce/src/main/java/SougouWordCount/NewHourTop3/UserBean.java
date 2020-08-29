@@ -53,16 +53,10 @@ public class UserBean implements WritableComparable<UserBean> {
     public int compareTo(UserBean o) {
         //先比较时间
         int comp = Integer.compare(this.getHour(), o.getHour());
-        //如果时间相同，比较搜索量
+        //如果时间相同，比较搜索词
         if (comp == 0) {
-            int comp2 = Integer.valueOf(this.getCount()).compareTo(o.getCount());
-            //比较搜索词
             //降序排序
-            if (comp2==0)
-            {
-                return -this.getSearchItem().compareTo(o.getSearchItem());
-            }
-            return -comp2;
+            return -this.getSearchItem().compareTo(o.getSearchItem());
         }
         //如果访问时间不同，直接返回
         return comp;

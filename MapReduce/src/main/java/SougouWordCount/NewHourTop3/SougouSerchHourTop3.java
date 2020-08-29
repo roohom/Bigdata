@@ -1,6 +1,5 @@
 package SougouWordCount.NewHourTop3;
 
-import SougouWordCount.EveHourTop3.SortBean;
 import SougouWordCount.EveHourTop3.UserBean;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -33,9 +32,10 @@ import java.util.TreeSet;
  */
 
 /**
+ * TODO:未能以单job解决搜狗数据每小时搜索量前三的搜索词实现热搜功能
+ *
  * 根据搜索内容进行分组聚合 键设置为搜索内容 值设置为1
  * 对值累加 排序取前三
- * <p>
  * 每个小时
  * 要根据小时分组 排序
  * 再根据搜索词的数量进行降序排序
@@ -59,12 +59,7 @@ public class SougouSerchHourTop3 extends Configured implements Tool {
 
     //map端输出 userbean 按照 时间 搜索量排序
     public static class SougouReducer extends Reducer<UserBean, IntWritable, Text, NullWritable> {
-        TreeSet<String> searchSet = new TreeSet<>(new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                return o1.compareTo(o2);
-            }
-        });
+        TreeSet<String> searchSet = new TreeSet<>();
 
 //        TreeMap<Integer,String> searchMap = new TreeMap<>();
 
@@ -80,19 +75,23 @@ public class SougouSerchHourTop3 extends Configured implements Tool {
             //设置搜索词的搜索量
             key.setCount(sum);
             searchSet.add(key.toString());
+            if (searchSet.size()>3)
+            {
+                searchSet.remove(searchSet.first());
+            }
+//            System.out.println(key.toString());
         }
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-
             for (String searchItem : searchSet) {
                 //跳坑警告！！！！！！！
-                this.outputKey.set(searchItem);
+                this.outputKey.set(searchItem.toString());
                 context.write(this.outputKey, this.outputValue);
             }
+            searchSet.clear();
         }
     }
-
 
     @Override
     public int run(String[] strings) throws Exception {
@@ -111,6 +110,7 @@ public class SougouSerchHourTop3 extends Configured implements Tool {
         job.setMapOutputValueClass(IntWritable.class);
 
         //shuffle
+        job.setGroupingComparatorClass(UserGroup.class);
 
         //reduce
         job.setReducerClass(SougouReducer.class);

@@ -426,6 +426,14 @@ null 	NullWritable
 - 排序：调用了数据类型自带的conpareTo方法
 - 分组：按照K2进行分组
 
+#### 过程
+
+
+
+<img src="./MapReduce过程.png" alt="MapReduce过程"  />
+
+
+
 ### Shuffle中的优化
 
 #### Combiner
@@ -453,16 +461,6 @@ Map端的聚合，为Reduce减负
 #### Compress
 
 应用：减少磁盘和网络IO
-
-- 在程序中设置压缩Compress
-
-  ~~~java
-  ~
-  ~~~
-
-  
-
-
 
 
 
