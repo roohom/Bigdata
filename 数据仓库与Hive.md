@@ -185,9 +185,241 @@
   - 如果这份数据比较重要，建立外部表保证数据安全
   - 入股多个人需要使用这张表读取同一份数据，任何一个表被删除，不能影响数据
 
-### 分区结构表
+### 结构
 
-### 分桶结构表
+#### 普通结构表
+
+- 普通结构表和HDFS文件之间的映射关系
+
+  - Hive表的最后一级目录就是表的目录
+
+  - 表中的数据按照原始数据文件形式存在
+
+    > 当使用load data语句将文件与Hive中的表关联后，无论原先HDFS文件存储在HDFS上的哪个位置，都会被移送到/user/hive/warehouse/数据库名/表名这个目录下，并且仍然按照文件形式存储
+
+#### 分区结构表
+
+> 降低程序的负载，提高程序的效率
+
+**设计思想**是**优化底层MapReduce的输入，根据分区直接对数据进行过滤，避免不需要用到的数据进入程序。**
+
+为什么这么说？
+
+- 有个场景：
+
+  - 在表的目录下(hivelog)存储了多个日志文件，并且每个日志文件以时间命名(如：2020-08-29)，如果需要对8月29日的日志文件进行处理，则需要过滤：
+
+    ~~~SQL
+    select count(*) from hivelog where daystr=2020-08-29;
+    ~~~
+
+    >  这么简单的依据SQL，我们知道Hive的底层是通过MapReduce来实现的，所以在底层MapReduce读取了HDFS上hivelog这个目录，将这个目录下的所有文件作为程序的输入，过滤的目的可以达到，可是这么一来，就需要读取所有的文件，而MapReduce运行起来好费时间和资源
+
+- 另一个场景：
+
+  - 同样在hivelog下存储了多个文件，不过与上个场景不同的是，每天日志文件都被上一级以时间命名的目录包裹起来，如：
+
+    ~~~
+    /user/hive/warehouse/practice.db/2020-08-28/2020-08-28.log
+    /user/hive/warehouse/practice.db/2020-08-29/2020-08-29.log
+    /user/hive/warehouse/practice.db/2020-08-30/2020-08-30.log
+    ~~~
+
+    > 这样，如果我们想要过滤读取到2020-08-29这一天的日志再次执行
+    >
+    > ~~~SQL
+    > select count(*) from hivelog where daystr=2020-08-29;
+    > ~~~
+    >
+    > 在底层MapReduce程序的输入是不一样的，它只读取了2020-08-29.log这个文件，文件读取量是上一种场景的三分之一
+
+- 应用场景：
+  - 需要按照一定的时间维度进行数据处理，数据量非常大的
+
+- 实现方式：
+
+  - 方式一：**手动分区**
+
+    - 应用场景：数据本身就是**已经按照分区规则分好**了的
+
+      - 例如hive的日志就是按照天日期分好的
+
+    - 这样就可以之间创建一张分区表，将对应的文件按照分区条件加载到不同对的分区中
+
+      > 加载，这个时候，Hive实际在HDFS中数据表的目录下创建了N个以分区条件命名的目录
+
+      ~~~SQL
+      load data local inpath '/export/datas/emp10.txt' into table
+      tb_emp_part1 partition(department = 10);
+      
+      此时目录名就是department=10
+      ~~~
+
+    - 分区表的分区过滤，直接通过元数据找到分区对应的HDFS位置作为MapReduce的输入
+
+  - 方式二：**自动分区**
+
+    - 应用场景：**数据本身没有做分区**，拆分不同的文件
+
+      - 例如：Nginx的日志每天都追加写入同一个文件中
+
+    - 实现步骤：
+
+      1. 开启自动分区
+
+         ~~~SQL
+         set hive.exec.dynamic.partition.mode=nonstrict;
+         ~~~
+
+      2. 创建一张分区表，将待分区的文件加载到这张普通表中
+
+      3. 再创建一张分区结构表，使用partitioned by字段指定分区的字段条件
+
+      4. 从普通表中查询将数据分区写入创建的分区结构表中
+
+         ~~~SQL
+         insert into table 分区表 partition(分区字段) select * from 普通表;
+         ~~~
+
+- 多级分区
+
+  - 比如一个需求：按照天分区，再按照小时分区
+
+  - 这个文件是按照时间分区好的，因此需要执行手动分区
+
+  - 在创建分区结构表时使用语句
+
+    ~~~SQL
+    partitioned by(daystr string, hourstr string)
+    ~~~
+
+  - 将HDFS上或本地的文件加载到分区结构表中，指定分区
+
+    ~~~SQL
+    partition (daystr='20150828',hourstr='18');
+    partition (daystr='20150828',hourstr='19');
+    ~~~
+
+- 特点：
+
+  - 分区是目录级的
+  - 分区字段是逻辑存在，并不是物理存在的，实际的文件中并没有这个字段
+  - Hive分区是将数据文件按照分类存储在不同的目录中，优化输入
+
+#### 分桶结构表
+
+> 实际使用中，除了为了用来**专门优化join减少比较的次数**，其他一无是处。
+
+- 本质：就是底层MapReduce的分区(多个reduce下，在map端shuffle阶段为行数据打上标签用来标记被哪一个reduce处理)
+- 规则：
+  - 桶的个数：底层MapReduce中Reduce的个数
+  - clustered by ：按照哪一列作为Map输出的Key，进行分区
+  - 按照Key的哈希取余
+
+
+
+## Join与排序
+
+### Join
+
+- 内连接
+- 左连接
+- 右连接
+- 全连接
+
+> 注意：**严禁产生笛卡尔积**，大数据环境中的数据量巨大，而笛卡尔积会产生更大的数据量。
+
+注意规避一下几种写法：
+
+~~~MYSQL
+# 产生笛卡尔积
+select a.*, b.*
+from a,b; 
+
+# 为指定join条件，产生笛卡尔积
+select a.*, b.*
+from a join b;
+
+# 不规范的join写法，使用where会在全部的数据中过滤从而得到指定条件的数据，因此是在笛卡尔积产生的条件下按照条件过滤得到想要的数据
+select a.*, b.* 
+from a join b where 条件;
+~~~
+
+- 底层实现：
+  - reduce join：join过程发生在Reduce端
+    - 特点：
+      - 必须经过shuffle，通过shuffle将关联的字段分组，在reduce端进行关联
+      - 适合于大表join大表
+  - Map join：底层发生在map端，不经过shuffle
+    - 特点：
+      - 将小数据放入每台机器的内存中，所有的join都发生在内存中
+      - Hive会优先调用map join，如果map join条件不能满足，会自动调用Reduce join（这由配置文件决定hive.auto.convert.join）
+      - 适合小数据join大数据
+  - SMB Join = Map Join + Bucket Join
+    - 两张表都是桶表
+    - B表桶的个数必须等于A表的桶的个数
+    - join的字段 = 分桶的字段 = 排序的字段
+
+### 排序
+
+- order by：全局有序，只能有一个reduce
+- sort by：局部有序，每个ReduceTask内部有序(如果只有一个reduce，其效果和order by效果一样)
+- distribute by：干预底层MapReduce的分区，指定按照哪一列作为key进行分区
+- clustered by：当distribute by 和sort by指定的字段是同一个字段时，可以直接使用clustered by
+
+## 复杂数据类型
+
+### array类型
+
+~~~mysql
+row format delimited fields terminated by '\t' --指定文件中列的分隔符
+COLLECTION ITEMS TERMINATED BY ','; --指定数组中每个元素的分隔符
+~~~
+
+
+
+### Map类型
+
+~~~mysql
+row format delimited fields terminated by ',' --指定文件中列的分隔符
+COLLECTION ITEMS TERMINATED BY '-' --指定每个KeyValue之间的分隔符
+MAP KEYS TERMINATED BY ':'; --指定KEY和Value之间的分隔符
+~~~
+
+
+
+## 函数
+
+### 内置函数
+
+- 列举：
+
+  ~~~mysql
+  show functions；
+  ~~~
+
+- 查看用法：
+
+  ~~~mysql
+  desc function func_name;
+  ~~~
+
+- 查看函数和示例：
+
+  ~~~mysql
+  desc function extended func_name;
+  ~~~
+
+### 自定义函数
+
+#### 分类
+
+- UDF：一对一，普通
+- UDAF：多对一，聚合
+- UDTF：一对多
+  - 比如explode
+
+
 
 
 
