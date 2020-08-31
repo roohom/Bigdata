@@ -327,7 +327,7 @@
     - 从节点的健康状态
       - **心跳机制**，每隔一段时间，所有的DataNode都会向NameNode汇报一次心跳
     - 管理数据的安全
-      - **汇报机制**，每隔一段时间，所有的DataNode都会向NameNode汇报自己当前所存储所有块的信息
+      - **汇报机制**，每隔一段时间，所有的DataNode都会向NameNode汇报自己当前所存储**所有块的信息**
       - NameNode将DN汇报的信息与元数据进行比较，**校验**数据的丢失情况
     - 管理元数据：元数据记录了每个文件对应的所有的小的部分存储的位置
       - NameNode启动时会将磁盘中的元数据加载到内存中
@@ -449,6 +449,7 @@
 
   - HDFS通过副本机制来解决
   - 数据冗余保障机制
+  - 安全模式+汇报块机制
 
 - 问题2：如果有数据丢失，怎么及时发现以及解决？
 
@@ -464,8 +465,11 @@
 
   - HDFS有副本机制以及会恢复丢失的数据
   - 注意：HDFS数据存储目录配置可以有多个的
+    - 这两个目录要设置在不同的磁盘上
 
 #### **元数据安全**
+
+> NameNode启动会将元数据读入内存，在运行的过程中元数据的变化都会在内存中更改，由于内存中的元数据变化都没有被写入到本地元数据文件fsimage文件中，所以NameNode会将内存中的元数据变化写入到本地的edits文件中，预防元数据变化的丢失，在NameNode下一次启动时将edits文件中的数据写入fsimage文件中，但是又由于时间长了元数据变化量会非常大，edits文件的大小也会非常大，所以就需要定时将edits文件中的内容写入fsimage实现元数据的同步，这个定时同步的工作就是由SecondaryNameNode来做的。
 
 - 管理
   - NameNode管理元数据，因为NameNode接受客户端请求，需要读写元数据
@@ -478,10 +482,10 @@
 - 写入
   - 每次提交写入【写入、修改、删除】请求给NameNode，NameNode记录新的元数据到内存中
 - 问题
-  - 由于每次元数据的变化都是在内存中发生改变，本地元数据文件fsimage文件没有个改变
+  - 由于每次元数据的变化都是在内存中发生改变，本地元数据文件fsimage文件没有改变
   - 如果NameNode故障，内存中元数据丢失，所有元数据变化都丢失了，只能重新加载之前的元数据文件
     - 问题1：NameNode下一次启动怎么获取最新的元数据？
-    - 解决：将内存中的元数据变化写入edits文件，当NameNode重新启动时，会将edits文件与原先的fsimage文件合并，得到关闭之前最新的元数据
+    - 解决：将**内存中的元数据变化写入edits文件**，当NameNode重新启动时，会将edits文件与原先的fsimage文件合并，得到关闭之前最新的元数据
     - 问题2：NameNode 运行一年了，元数据变化非常多，edits文件非常大，要实现合并，NameNode非常吃力，启动非常慢
     - 解决：通过SecondaryNameNode 实现辅助同步内存元数据与本地元数据
       - fsimage：本地元数据文件
@@ -499,6 +503,19 @@
 ### HA
 
 > High Availablility
+
+- JournalNode是共享日志节点：
+  - 公共的数据存储服务
+  - 两个NameNode刚刚启动，元数据都是一致的
+  - Active的NameNode的元数据一致在发生变化，将Active的元数据的变化【edits】写入journalnode
+  - StandBy的NameNode 会从Journalnode中读取edits，来更改自己的元数据
+- 如何解决本地元数据加载过慢问题？
+  - SecondaryNameNode的工作交给StandbyNameNode来做，定时从JournalNode中读取edits文件中的内容与fsimage文件合并，实现元数据的更新
+  - 将新的fsimage文件发送给Active状态的Node一份
+
+
+
+
 
 
 

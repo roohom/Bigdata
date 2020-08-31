@@ -2,13 +2,15 @@
 
 [TOC]
 
-## 形成
+## 脑裂问题
+
+### 形成
 
 - 如果Active的ZKFC故障，导致ZK中的临时节点file1被删除
 - Standby的ZKFC发现file1被删除，认为active的NN1故障了，于是standby的ZKFC创建了file1
 - 并且NN2转换为active状态，其实NN1也是active
 
-## 解决
+### 解决
 
 - 让ZKFC1和ZKFC2同时创建一个一个临时节点file1，谁创建成功就是active，否则是standby
   - 假设zkfc1是active，zkfc2为standby
