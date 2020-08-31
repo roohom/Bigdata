@@ -1,3 +1,7 @@
+[TOC]
+
+
+
 # 数据仓库
 
 ## 概念
@@ -234,8 +238,9 @@
     > 在底层MapReduce程序的输入是不一样的，它只读取了2020-08-29.log这个文件，文件读取量是上一种场景的三分之一
 
 - 应用场景：
-  - 需要按照一定的时间维度进行数据处理，数据量非常大的
-
+  
+- 需要按照一定的时间维度进行数据处理，数据量非常大的
+  
 - 实现方式：
 
   - 方式一：**手动分区**
@@ -363,7 +368,7 @@ from a join b where 条件;
 ### 排序
 
 - order by：全局有序，只能有一个reduce
-- sort by：局部有序，每个ReduceTask内部有序(如果只有一个reduce，其效果和order by效果一样)
+- sort by：局部有序，每个Reduce Task内部有序(如果只有一个reduce，其效果和order by效果一样)
 - distribute by：干预底层MapReduce的分区，指定按照哪一列作为key进行分区
 - clustered by：当distribute by 和sort by指定的字段是同一个字段时，可以直接使用clustered by
 
@@ -419,11 +424,106 @@ MAP KEYS TERMINATED BY ':'; --指定KEY和Value之间的分隔符
 - UDTF：一对多
   - 比如explode
 
+#### 开发使用
+
+- 开发一个UDF：
+
+  - 开发一个类继承自UDF类
+
+    - 实现一个或者多个evaluate方法
+      - 在evaluate方法中实现数据的处理逻辑
+      - 将结果作为返回值返回
+
+  - 将自己写的类打成jar包，添加到Hive的环境变量中
+
+    - 本地编写类，打成jar包
+
+    - 上传至Linux环境
+
+    - 进入Hive(beeline)
+
+      ~~~mysql
+      add jar /export/datas/udf.jar
+      ~~~
+
+  - 在Hive中创建一个函数
+
+    ~~~mysql
+    create temporary function transDate as
+    'bigdata.itcast.cn.hive.udf.UserUDF';
+    ~~~
+
+  - 使用自己开发的函数
+
+    ~~~mysql
+    select transDate("21/Sep/2019:13:30:00");
+    ~~~
+
+- UDTF的使用：一对多
+
+  - 原始数据是一行一列
+  - 需求结果是：多行多列
+
+- UDAF：多对一，聚合
 
 
 
+### 侧视图
 
+> lateral view
 
+- 功能：专门用于搭配UDTF使用，将UDTF与其他字段进行拼接
+
+- 什么是视图？
+
+  - 关键字：view
+
+  - 语法：
+
+    ~~~mysql
+    create view | table
+    ~~~
+
+  - 定义：是一种只读表
+
+  - 使用：当做表来使用，不过不能修改
+
+- 设计：将UDTF的结果构建成一个类似于视图的形式，与原表进行拼接
+
+- 使用：
+
+  - 语法：
+
+    ~~~mysql
+    select …… from tabelA lateral view UDTF(xxx) 视图名 as a,b,c
+    ~~~
+
+  - 数据：
+
+    ~~~mysql
+    http://facebook.com/path/p1.php?query=1
+    
+    域名 路径 参数
+    facebook.com /path/p1.php query=1
+    ~~~
+
+    
+
+  - 示例：
+
+    ~~~mysql
+    select
+        a.id,
+        b.host,
+        b.path
+    from
+        tb_url a
+        lateral view parse_url_tuple(url, 'HOST',"PATH") b as host,path;
+    ~~~
+
+    
+
+  
 
 
 
