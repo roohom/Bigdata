@@ -415,7 +415,7 @@
 
 - 解决了HDFS如何实现分布式存储的问题
 
-- 规则：文件大于128M就会按照128M拆分，讲一个大文件拆分成若干小块，每128M一个块，不足128M按照实际大小存储
+- 规则：文件大于128M就会按照128M拆分，将一个大文件拆分成若干小块，每128M一个块，不足128M按照实际大小存储
 
 - 按照128M大小进行拆分文件是依据配置文件来的
 
@@ -605,9 +605,45 @@
     - 专门负责管理自己所在的机器上的CPU和内存资源
     - 接收任务，使用CPU和内存来执行任务（**计算**）
 
+#### 问题
+
+yarn中的container的概念和其作用是什么？
 
 
 
+#### 运行流程
+
+流程
+
+- 1-客户端请求提交运行一个分布式程序给ResourceManager(下称RM)
+- 2-RM验证请求是否合法，如果合法运行这个程序
+- 3-ResourceManager会随机选择一台NodeManager启动这个程序的管理者：ApplicationMaster
+  - ApplicationMaster：每一个程序都有一个，用于管理这个程序的运行
+    - 类似于：大领导接了一个活，将这个活交给一个小领导来负责
+    - 分配任务，监控任务，汇报结果
+- 4-ApplicatitionMaster会根据程序需求向ResourceManager申请资源和指令
+  - 资源：每个Task运行在哪台机器，每个Task能用这台机器的多少CPU和 内存
+  - 指令：每个Task完成的任务是什么
+- 5-ResourceManager会将每个Task运行的任务信息和资源信息封装在Container(Such as memory, cpu, disk, network etc)中返回给ApplicationMaster
+  - 这时候APPMaster就知道这些Task要运行在哪些机器，能使用多少资源
+- 6-AppMaster会根据Contianer信息通知对应的NodeManager启动对应Task进程实现处理
+  - 每个NodeManager都会拿到Container里面的信息
+  - 自己要运行哪个Task，能用多少资源
+- 7-maptask运行结束会通知AppMaster，AppMaster通知ReduceTask
+  - 只要第一个MapTask运行结束，APPMaster就会通知ReduceTask过来拉取数据
+- 8-ReduceTask到每个MapTask中拉取数据，进行处理
+- 9-ReduceTask将结果返回给APPMaster
+- 10-APPMaster将结果返回给客户端 和RM
 
 
 
+在此过程中，ResourceManager和NodeManager互相协调来执行具有用户权限和用户身份的程序。在此期间：
+
+- ResourceManager负责：
+  - 寻找空间去部署程序管理者(ApplicationMaster AM)
+  - 请求该节点上的NameNode分配一个Container并在其中启动AM
+  - 与AM通信，因此这个AM可以请求更多的Containers并操作和释放当前的containers，并提供关于分配当前正在运行的containers的信息
+- NodeManager负责：
+  - 资源本地化：从HDFS上或者其他文件系统上下载文件到本地目录
+  - 以用户身份启动程序
+  - 监控这个程序，如果失败了向RM汇报

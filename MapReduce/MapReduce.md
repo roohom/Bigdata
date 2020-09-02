@@ -230,7 +230,7 @@ null 	NullWritable
 - 分区规则
   - 默认规则：按照K2的Hash取余得到Reduce的个数/分区的个数
     - 分区类的决定：默认的分区类：HashPartitioner
-    - 方法：getPartition(K2, V2, NumberOfReduce)
+    - 方法：**getPartition(K2, V2, NumberOfReduce)**
     - 规则优点：只要K2相同，就会进入同一个Reduce
     - 规则缺点：负载不均衡造成**数据倾斜**
 
@@ -242,8 +242,8 @@ null 	NullWritable
 
 - **如何自定义分区**：
   
-  - 开发一个**分区器**：继承Partitioner类
-  - 重写getPartition方法
+  - 开发一个**分区器**：继承**Partitioner**类
+  - 重写**getPartition**方法
     - getPartition方法需要三个参数分别是分别是K2,V2,和numReduce(int类型)
     - K2 和V2分别是Map阶段的输出
     - numRduce表示调用第几个Reduce
