@@ -581,8 +581,10 @@
   - 分布式环境
     - 多台部署了环境的机器
 
-### yarn
+### YARN
 
+> Yet Another Resource Negotiator
+>
 > 定义：分布式资源管理和任务调度框架
 
 #### 介绍
@@ -604,10 +606,49 @@
   - 从：NodeManager计算节点
     - 专门负责管理自己所在的机器上的CPU和内存资源
     - 接收任务，使用CPU和内存来执行任务（**计算**）
+  
+- ResourceManager和NodeManager互相协调来执行具有用户权限和用户身份的程序。在此期间：
 
-#### 问题
+  - ResourceManager负责：
 
-yarn中的container的概念和其作用是什么？
+    - 寻找空间去部署程序管理者(ApplicationMaster AM)（本身就是一个Container）
+
+    - 请求该节点上的NameNode分配一个Container并在其中启动AM(这说明**AM本身就是一个Container，通常称为Container 0**)
+
+    - 与AM通信，因此这个AM可以请求更多的Containers并操作和释放当前的containers，并提供关于分配当前正在运行的containers的信息
+
+      > 一个MapReduce作业可以请求一定量的Map Container，当Map任务结束时，可以释放Map Containers，并请求更多的Reduce Containers
+
+    - 有一个可插拔的调度器组件**Scheduler**，负责为运行中的各种应用分配资源，是纯粹的调度器，不负责应用程序的监控和状态跟踪，也不保证在陈程序失败和硬件失败的情况下对其重启
+
+  - NodeManager负责：
+
+    - 与RM保持通信，管理Container的生命周期，监控每个Container的资源使用情况，跟踪节点健康状况、管理日志和不同应用程序的负数服务
+    - 资源本地化：从HDFS上或者其他文件系统上下载文件到本地目录
+    - 以用户身份启动程序，启动应用程序的Container，监控他们的资源使用情况
+    - 监控这个程序，如果失败了向RM汇报
+
+  ![Client发给RM的资源请求](./Client发给RM的资源请求.png)
+
+#### 组件
+
+- ResourceManager
+  - 一个纯粹的调度器，根据应用程序的资源请求严格限制系统的可用资源
+  - 使用不同的策略，有一个可插拔的调度器来应用不同的调度算法
+- ApplicationMaster
+  - ApplicationMaster实际上是特定框架库的一个实例，负责与RM协商资源并与NM协同工作来执行和监控Container以及他们的资源消耗
+  - 真实环境中，每一个应用都有一个ApplicationMaster实例
+  - 周期性地向RM发送心跳确认其健康以及更新资源需求
+- ResourceRequest和Container
+  - ResourceRequest
+    - <资源名称，优先级，资源需求，Container数>
+    - 一个程序在运行时，需要通过ApplicationMaster请求特定的资源需求来满足资源需要，调度器会为其分配一个Container来响应资源需求，用于满足由AM在ResourceRequest中提出的请求
+    - 程序需要运行，需要NN需要向AM申请资源，AM向RM申请资源，AM发出的请求就封装在ResourceRequest
+  - Container
+    - 代表了单个节点上的一组资源（内存，CPU），由NodeManager监控，由ResourceManager调度
+    - 一种资源分配形式，是RM为ResourceRequest成功分配资源的结果
+    - Container为应用程序授予在特定主机上使用资源（如内存和CPU）的权利
+    - AM必须取走Container，并且交给NodeManager，NM会利用相应的资源来启动Container的任务进程
 
 
 
@@ -635,15 +676,4 @@ yarn中的container的概念和其作用是什么？
 - 9-ReduceTask将结果返回给APPMaster
 - 10-APPMaster将结果返回给客户端 和RM
 
-
-
-在此过程中，ResourceManager和NodeManager互相协调来执行具有用户权限和用户身份的程序。在此期间：
-
-- ResourceManager负责：
-  - 寻找空间去部署程序管理者(ApplicationMaster AM)
-  - 请求该节点上的NameNode分配一个Container并在其中启动AM
-  - 与AM通信，因此这个AM可以请求更多的Containers并操作和释放当前的containers，并提供关于分配当前正在运行的containers的信息
-- NodeManager负责：
-  - 资源本地化：从HDFS上或者其他文件系统上下载文件到本地目录
-  - 以用户身份启动程序
-  - 监控这个程序，如果失败了向RM汇报
+![YARN运行流程](./YARN运行流程.png)
