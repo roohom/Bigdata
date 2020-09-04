@@ -500,6 +500,35 @@
   - SecondaryNameNode
     - 功能：**辅助实现NameNode元数据合并，加快NameNode的启动速度**
 
+#### I/O操作
+
+##### 序列化
+
+- - > 
+
+- 何为序列化？
+
+  - 序列化(Serialization)指将结构化对象转化为字节流以便在网络上传输或写到磁盘进行永久存储的过程。反序列化(deserialization)是指将字节流转回结构化对象的逆过程。
+
+- 序列化用于分布式数据处理的两大领域：进程通信和永久存储
+
+- Hadoop系统中多个节点上进程间的通信是通过RPC(Remote procedure call 远程过程调用)实现的，RPC协议将消息序列化成二进制流后发送到远程节点，远程节点接着将二进制流反序列化为原始消息，格式如下：
+
+  - 紧凑
+  - 快速
+  - 可扩展
+  - 支持互操作
+
+- 问：Hadoop为什么要自己实现序列化，而不用Java自带的序列化？（为什么不用Java Object Serialization？）
+
+  - Java有自己的序列化机制，成为Java Object Serialization，该机制与编程语言紧密相关。
+
+  - Hadoop之父Doug Cutting是这样说的：“为什么开始设计Hadoop的时候不用Java Serialization？因为它**(Java Serialization)看起来太复杂，而我认为需要一个至精至简的机制，可以用于精确控制对象的读和写，这个机制将是Hadoop的核心**，使用Java Serialization虽然可以获得一些控制权，但用起来非常纠结。不用RMI(Remote Mwthod Invocation 远程方法调用)也处于类似的考虑。**高效、高性能的进程间通信是Hadoop的关键**。我觉得我们需要精确控制连接、延迟和缓冲的处理方式，RWI对此也无能为力。”
+
+  - 问题在于Java Serialization不满足Hadoop序列化格式标准：精简、快速、可扩展、支持互操作
+
+    > 简而言之，Java自带的序列化太过于笨重，不能实现Hadoop中所要求的高效、高性能的进程间通信和精确控制对象的读和写。
+
 ### HA
 
 > High Availablility
