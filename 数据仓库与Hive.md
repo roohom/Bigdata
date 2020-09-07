@@ -99,10 +99,20 @@
   - Hive能实现分布式存储和分布式计算
   - 底层：
     - 存储：HDFS
-    
     - 计算：MapReduce+yarn
-    
-      
+
+## 常用配置
+
+- 本地模式
+
+  ~~~shell
+  set hive.exec.mode.local.auto=true;
+  ~~~
+
+  - 本地模式的三个条件：
+    - 1.job的输入数据大小必须小于参数：hive.exec.mode.local.auto.inputbytes.max(默认128MB)
+    - 2.job的map数必须小于参数：hive.exec.mode.local.auto.tasks.max(默认4)
+    - 3.job的reduce数必须为0或者1
 
 ## 元数据服务
 
@@ -315,11 +325,56 @@
 
 > 实际使用中，除了为了用来**专门优化join减少比较的次数**，其他一无是处。
 
-- 本质：就是底层MapReduce的分区(多个reduce下，在map端shuffle阶段为行数据打上标签用来标记被哪一个reduce处理)
+- 本质：就是底层MapReduce的分区(多个reduce下，在map端shuffle阶段为行数据打上标签用来标记被哪一个reduce处理)、
+
 - 规则：
   - 桶的个数：底层MapReduce中Reduce的个数
   - clustered by ：按照哪一列作为Map输出的Key，进行分区
   - 按照Key的哈希取余
+  
+- 注意：对于分桶表，不能使用load data的方式进行数据插入操作，因为load data导入的数据不会有分桶结构。
+
+  > 如何避免针对桶表使用load data插入数据的误操作呢？
+  >
+  > 限制对桶表进行load操作  set hive.strict.checks.bucketing  = true;  
+  >
+  > 也可以在CM的hive配置项中修改此配置，当针对桶表执行load data操作时会报错。
+
+  - 先创建临时表，通过load data将txt文本导入临时表。
+
+    ~~~sql
+    --创建临时表
+    create table temp_buck(id int, name string)
+    row format delimited fields terminated by '\t';
+    --导入数据
+    load data local inpath '/tools/test_buck.txt' into table temp_buck;
+    ~~~
+
+  - 使用insert select语句间接的把数据从临时表导入到分桶表。
+
+    ~~~mysql
+    --启用桶表
+    set hive.enforce.bucketing=true;
+    --限制对桶表进行load操作
+    set hive.strict.checks.bucketing = true;
+    --insert select
+    insert into table test_buck select id, name from temp_buck;
+    --分桶成功
+    ~~~
+
+> **注意**，hive使用对分桶所用的值进行hash，并用hash结果除以桶的个数做取余运算的方式来分桶，保证了每个桶中都有数据，但每个桶中的数据条数不一定相等。
+>
+> 如果另外一个表也按照同样的规则分成了一个个小文件。两个表join的时候，就不必要扫描整个表，只需要匹配相同分桶的数据即可，从而提升效率。
+>
+> 在数据量足够大的情况下，分桶比分区有更高的查询效率。
+
+#### 分区和分桶的区别
+
+1. 分桶和分区两者不干扰，可以把分区表进一步分桶；
+
+2. 分桶对数据的处理比分区更加细粒度化：分区针对的是数据的存储路径；分桶针对的是数据文件；
+
+3. 分桶是按照列的哈希函数进行分割的，相对比较平均；而分区是按照列的值来进行分割的，容易造成数据倾斜。
 
 
 
