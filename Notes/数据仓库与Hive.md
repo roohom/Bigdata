@@ -255,7 +255,7 @@
   
 - 实现方式：
 
-  - 方式一：**手动分区**
+  - 方式一：**手动分区**(静态分区)
 
     - 应用场景：数据本身就是**已经按照分区规则分好**了的
 
@@ -272,9 +272,29 @@
       此时目录名就是department=10
       ~~~
 
+    - 例如
+
+      ~~~sql
+      insert overwrite table demo_static_partition 
+      partition(year="2020", month="04", 
+      day="2020-04-10", hour="22") 
+      select user_id, user_name, 
+      trade_year as year ,
+      trade_month as month,
+      trade_day as day,
+      trade_hour as hour  
+      from user_demo 
+      where trade_year="2020" 
+      and trade_month="04" 
+      and trade_day="2020-04-10" 
+      and trade_hour="22" 
+      ~~~
+
+      
+
     - 分区表的分区过滤，直接通过元数据找到分区对应的HDFS位置作为MapReduce的输入
 
-  - 方式二：**自动分区**
+  - 方式二：**自动分区**(动态分区)
 
     - 应用场景：**数据本身没有做分区**，拆分不同的文件
 
@@ -297,6 +317,71 @@
          ~~~SQL
          insert into table 分区表 partition(分区字段) select * from 普通表;
          ~~~
+         
+         ~~~sql
+         insert overwrite table demo_dynamic_partition 
+         partition(year=year, month=month, 
+         day=day, hour=hour) 
+         select user_id, user_name, 
+         trade_year as year ,
+         trade_month as month,
+         trade_day as day,
+         trade_hour as hour  
+         from user_demo 
+         ~~~
+         
+         
+    
+  - 使用动态分区与静态分区的注意事项和区别
+
+    - 区别：
+
+      - 动态分区，在运行时根据列的取值去自动创建分区，有多少种值就多少个分区，会为每个分区分配reduce个数，当分区量过多时，reduce也会增加
+      - 静态分区不管分区有没有数据都会创建该分区，而动态分区则会有结果就创建，没结果就不会创建
+      - 动态分区根据字段的变化而变化，手动分区是文件已经按照字段分区规则分好，手动指定分区的值为静态值。
+
+    - 注意事项：
+
+      - 需要开启属性配置：
+
+        ~~~sql
+        -- Hive默认配置值
+        -- 开启或关闭动态分区
+        hive.exec.dynamic.partition=false;
+        -- 设置为nonstrict模式，让所有分区都动态配置，否则至少需要指定一个分区值
+        hive.exec.dynamic.partition.mode=strict;
+        -- 能被mapper或reducer创建的最大动态分区数，超出而报错
+        hive.exec.max.dynamic.partitions.pernode=100;
+        -- 一条带有动态分区SQL语句所能创建的最大动态分区总数，超过则报错
+        hive.exec.max.dynamic.partitions=1000;
+        -- 全局能被创建文件数目的最大值，通过Hadoop计数器跟踪，若超过则报错
+        hive.exec.max.created.files=100000;
+        
+        -- 根据个人需要配置
+        set hive.exec.dynamic.partition=true;  
+        set hive.exec.dynamic.partition.mode=nonstrict;
+        set hive.exec.max.dynamic.partitions.pernode=1000;
+        set hive.exec.max.dynamic.partitions=10000;
+        set hive.exec.max.created.files=1000000;
+        ~~~
+
+      - 混合使用时，静态分区必须在动态分区的前面
+
+        ~~~sql
+        insert overwrite table demo_static_partition 
+        partition(year="2020", month="04", 
+        day=day, hour=hour) 
+        select user_id, user_name, 
+        trade_year as year ,
+        trade_month as month,
+        trade_day as day,
+        trade_hour as hour  
+        from user_demo 
+        where trade_year="2020" 
+        and trade_month="04" 
+        ~~~
+
+        
 
 - 多级分区
 
