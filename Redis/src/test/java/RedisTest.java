@@ -1,9 +1,10 @@
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.*;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * @ClassName: RedisTest
@@ -81,7 +82,7 @@ public class RedisTest {
             //循环执行两秒钟
             i++;
         }
-        System.out.println("3秒内循环执行了"+i+"次");
+        System.out.println("3秒内循环执行了" + i + "次");
         Boolean s15 = jedis.exists("s1");
         System.out.println("s1的状态为:" + s15);
         System.out.println("=============================");
@@ -89,6 +90,74 @@ public class RedisTest {
         jedis.setex("s3", 5, "hadoop");
 
     }
+
+    //del/lpush/rpush/lpop/rpop/linsert/rpoplpush
+    @Test
+    public void testList() {
+        jedis.del("list1","list2");
+        jedis.lpush("list1", "1", "2", "3");
+        jedis.rpush("list1", "4", "5", "6");
+        List<String> list1 = jedis.lrange("list1", 0, -1);
+        System.out.println(list1);
+
+        //在第一个1的前面插入9
+        jedis.linsert("list1", BinaryClient.LIST_POSITION.BEFORE, "1", "9");
+
+        //将一个集合的最后一个弹出放入另一个集合的左边
+        jedis.lpush("list2", "1", "7", "4", "1");
+        List<String> list11 = jedis.lrange("list2", 0, -1);
+        System.out.println(list11);
+        jedis.rpoplpush("list1", "list2");
+        List<String> list12 = jedis.lrange("list1", 0, -1);
+        List<String> list2 = jedis.lrange("list2", 0, -1);
+        System.out.println(list12);
+        System.out.println(list2);
+
+    }
+
+    //hset/hget/hgetAll/hkeys/hvals/hdel/del
+    @Test
+    public void testHash() {
+
+    }
+
+    //sadd/smembers/sinter/scard/srem/sismember
+    //sinter用于取集合交集
+    @Test
+    public void testSet() {
+        jedis.sadd("set1", "1", "2", "3", "4", "3", "2", "1");
+        Set<String> set1 = jedis.smembers("set1");
+        System.out.println(set1);
+        Long set11 = jedis.scard("set1");
+        System.out.println(set11);
+
+        jedis.sadd("set2","1","4","8","6");
+        Set<String> sinter = jedis.sinter("set1", "set2");
+        System.out.println(sinter);
+    }
+
+    //zadd/zscore/zrank/zrevrangeWithScore/zrangeWithScores/zrem
+    @Test
+    public void testZset()
+    {
+        jedis.zadd("zset1",20.01,"www.jike.com");
+        jedis.zadd("zset1",50.01,"www.baidu.com");
+        jedis.zadd("zset1",30.01,"www.imdb.com");
+
+        Set<Tuple> zset1 = jedis.zrangeWithScores("zset1", 0, -1);
+        for (Tuple tuple : zset1) {
+            System.out.println(tuple.getScore());
+            System.out.println(tuple.getElement());
+        }
+
+        Double zset11 = jedis.zscore("zset1", "www.jike.com");
+        System.out.println(zset11);
+
+        //获取排名，从0开始
+        Long zset12 = jedis.zrank("zset1", "www.baidu.com");
+        System.out.println(zset12);
+    }
+
 
     @After
     public void jedisRelease() {
