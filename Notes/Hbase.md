@@ -23,17 +23,21 @@
   - 内存的成本高，易丢失，不可能满足所有数据的存储！
     - 现象：越新的数据，被处理概率越大，越老的数据，被处理的概率相对较小
     - 解决：将新的数据存储在内存中，对于老的数据达到一定条件时将内存中的数据写入磁盘[写入HDFS]
+      - 冷热数据分离
+      - 老的数据在HDFS
+      - 新的数据在内存
   - **数据存储在磁盘，如何保证数据安全？**
     - HDFS：基于硬盘做了备份[数据冗余机制]
     - 操作系统：做磁盘冗余阵列RAID1
     - Hbase直接基于硬盘存储，硬盘损坏会导致数据丢失，要考虑数据副本
       - Hbase底层对于文件的存储直接选用了HDFS来保证数据安全性
   - **内存的数据丢失如何解决？**
-    - 操作日志WAL
+    - 操作日志WAL也就是HLog
       - Write Ahead Log：预写日志
+      - 预写日志记录内存中所有数据的操作
   - 总结：实现分布式高性能读写
     - 基于分布式内存优先对数据读写
-    - 所有老的数据持久化在HDFS
+    - 所有老的数据**持久化**在HDFS
   - **如果数据在HDFS，从HDFS读，如何解决性能问题？**
     - 如何能在一个文件中快速找到一条数据？
       - 构建有序
@@ -43,6 +47,8 @@
 ## 功能
 
 - 是一个基于分布式内存和HDFS实现存储的随机、实时读写的NoSQL数据库
+  - 实现数据的存储
+  - 提供数据的读写
 
 ## 应用场景
 
@@ -63,7 +69,7 @@
 - 内存：基于分布式内存，数据优先写入了机器的内存
   - 内存中的数据达到一定条件，会将内存的数据写入HDFS成为文件
 - NoSQL：每个NoSQL都有自己的特点
-- Hbase基于**列存储**
+- Hbase基于**列存储**，KV结构的数据库
 
 ### 概念
 
@@ -87,12 +93,18 @@
     - 唯一标识一行的数据
     - 构建索引【整个HBASE只有这一个索引，不能有其他索引】
       - rowkey是HBASE的**唯一索引**
-    - HBASE底层默认按照ASCII码对Rowkey进行排序，以提高查询效率
+    - HBASE底层默认按照ASCII码【**字典顺序**】对Rowkey进行排序，以提高查询效率
+      - 牺牲一定写的代价换取基于有序的高性能的查询
+      - 决定了分区的规则
   - 是HBASE中表非常特殊的一类，每张HBASE表都自带这一列，这一列不属于任何列簇
   - 难点：Rowkey的值由开发者自行设定
     - Rowkey的值的设计决定了查询效率
+  - 问题：**只有按照RowKey查询才走索引查询，其他所有查询都直接走全表扫描？**
+    - 解决：
+      - 将查询条件组合作为RowKey  =>  Rowkey的设计
+      - 二级索引：基于一级索引之上构建一层索引
 - Column Family：列簇，对列进行分组
-  - 分组是为了提高性能
+  - 分组是为了提高性能，减少查询数据时的比较
   - 如何分组？
     - 组名自定义，可以任意，一般有标识度即可
     - 将拥有相似IO属性的列放在一组
@@ -107,9 +119,10 @@
   - **列簇级别**
     - 如果配置某个列簇的版本个数为2，那么此列簇下所有的单元都具有2个版本
   - HBASE允许存储历史版本的值，行和列相交是单元格组
-  - 默认HBASE查询时，默认会返回最新的值，指定版本查询
+  - 默认HBASE查询时，默认会返回最新的值(默认版本数为1)
   - 如何区分一列的多个版本的值？
     - 默认通过时间戳来进行区分不同版本的值
+    - 每个RowKey的每一列自带时间戳，用于区分多版本
 - TimeStamp：HBASE中每一个Rowkey的每一列默认自带这个值，会随着数据的更新时间而变化
   - 用于区分多版本
 
@@ -344,10 +357,25 @@
 - 分布式存储
   - 分布式内存：RegionServer
   - 分布式磁盘：HDFS
+  
 - 如何实现的：将HBASE中的表构建成分布式的表
   - HBASE中的每张表可以对应多个分区[Region]
     - 默认创建只有一个分区（Region）
-- Region：HBASE中表的分区，一张HBASE表可以有多个region，m每个region存储在不同的RegionServer中
+  
+- 与HDFS的区别
+
+  | 概念     | HDFS             | HBase        |
+  | -------- | ---------------- | ------------ |
+  | 分类     | 目录             | NameSpace    |
+  | 存储类型 | 文件             | 表           |
+  | 分的机制 | 分块：Block      | 分区：Region |
+  | 存储节点 | DataNode         | RegionServer |
+  | 规则     | 大表：128M一个块 | RowKey范围   |
+
+  
+
+- Region：HBASE中表的分区，一张HBASE表可以有多个region，每个region存储在不同的RegionServer中
+  - **是HBASE做负载均衡的最小单元**
   - 类似于HDFS中的文件的块
   - 一个Region只会归某一个RegionServer所管理
   - 一个RegionServer可以管理多个region
@@ -357,7 +385,7 @@
         - startKey
         - endKey
       - 规则：按照rowkey所属的范围来决定写入哪个分区
-      - Situation1：默认创建的表只有1个分区Region
+      - Situation1：**默认**创建的表只有1个分区Region
         - region0：负无穷~正无穷
       - Situation2：创建表的时候指定分区的划分
         - region0：-oo~100
@@ -365,13 +393,15 @@
         - region2：200~300
         - ……
         - region9：900~+oo
-- Store：列族，按照列族划分不同的Store，这个表有几个列族，region中就有几个Store【**一个Store代表一个列族**】
-  - MemStore：内存区域
-    - 1个Memtore
-    - 数据先写入MemStore
-  - StoreFile：物理存储在HDFS上的文件
-    - 0或者多个StoreFile文件
-    - 达到一定条件之后，Memstore中的数据会被写入HDFS变成StoreFile文件
+  - Store：列族，按照列族划分不同的Store，这个表有几个列族，region中就有几个Store【**一个Store代表一个列族**】
+    - 设计目的：将不同的列区分存储，就是列族的划分
+    - 一个Region里有多个Store
+    - MemStore：内存区域
+      - 每个Store都有一个
+      - 数据先写入MemStore
+    - StoreFile：HFILE，物理存储在HDFS上的文件
+      - 每个Store中有0或者多个StoreFile文件
+      - 达到一定条件之后，Memstore中的数据会被Flush刷写到HDFS变成StoreFile文件
 
 ### 存储模型
 
@@ -380,30 +410,132 @@
     - :one:根据表名请求元数据找到对应的所有Region信息
     - :two:根据RowKey决定存储到哪个region中
     - :three:将写入请求提交给这个region所在的regionserver中
-    - :four:根据列族进行判断，决定写入哪个Store中(也会写入memstore，当达到一定条件时，memstore中的数据会被写入HDFS变成storefile文件)
+    - :four:根据列族进行判断，决定写入哪个Store中(也会写入memstore，当达到一定条件时，memstore中的数据会被刷写到HDFS变成storefile文件)
+
+
+
+### 存储流程
+
+#### 写入
+
+- Step1：根据表名找到这张表对应的所有Region信息
+  - **问：怎么能得到表所对应的所有的Region信息？**
+    - 通过元数据来获取
+    - HBase自带两张表
+      - hbase：meta：记录hbase中所有用户表的元数据信息
+        - 两种RowKey
+          - 以表明作为rowkey
+          - 以region名作为rowkey
+      - hbase：namespace：记录了当前hbase中所有namespace的信息
+    - 通过put语句中的表名对meta表进行**前缀匹配**，就能得到这张表所有的region信息2
+  - **问：如何能知道Meta表所对应的region位置？**
+    - meta表所对应的region信息都记录在zookeeper中
+  - HBASE中所有的客户端都要先连接zookeeper
+  
+- Step2：根据Rowkey以及表的region起始范围进行比较，得到要写入的region
+- Step3：将写入请求提交给这个region所在的regionServer
+  - **问：如何能知道这个region所在的regionserver是哪个？**
+    - 通过元数据来获取这个region所对应的regionserver的地址
+- Step4：regionserver将输入写入对应的region，根据列族判断写入哪个Store
+- Step5：先写WAL(HLog)，然后将数据写入MemStore
+- Step6：写入流程结束，返回客户端
+  - Flush：当menstore中的数据达到一定条件，会触发将内存中的数据刷写如HDFS变成Sorefile文件
+  - Compact：将多个storefile文件进行合并成大文件
+    - Hbase没有删除和更新，删除和更新都是插入一条数据
+    - 老的数据被标记为更新状态或者是删除状态
+    - 这个阶段会真正从物理上删除被标记的数据
+  - Split：如果一个region存储的数据到达一定阈值，一个region会被等分为两个region
+    - 分摊单个region存储数据过多，负载过高
+    - 分由regionserver来分，两个region的去向由Master来分配
+
+#### 读取
+
+- step1：根据表名从元数据获取对应的region信息
+- step2：
+  - 有rowkey
+  - 无rowkey
+- step3：根据列族来读取对应Store的数据
+- step4：读
+  - 先读memstore
+  - 如果读memstore【写缓存】没有，就去读BlockCache【读缓存】
+  - 最后读StoreFile
+    - 第一次读取：如果memsotre没有就迫不得已地去读StoreFile
+    - 以后再去读，就会将读到的数据先写入BlockCache(默认开启)，避免二次读浪费时间
+    - 缓存释放策略：LRU算法(最近最少被使用)
+
+## 角色功能
+
+### HMaster
+
+- 主要负责集群管理
+  - 节点管理：regionserver的状态管理
+    - 故障转移
+  - 元数据管理：用于接收所有DDL操作请求
+    - 管理meta表以及namespace表的数据
+    - 与zookeeper连接，将一些管理类的元数据存储在zookeeper中
+  - region管理：负责管理每个region的分配
+    - 故障恢复
+    - split阶段的分配
+
+### HRegionServer
+
+- 接收客户端所有region的读写请求
+- 管理region存储数据：分割
+- 维护：
+  - WAL
+  - MemCache
+  - BlockCache
+  - 将内存的数据Flush成为StoreFile文件
+
+### Zookeeper
+
+- 构建HA：辅助选举
+- 存储关键性的管理类元数据
+
+
+
+### HDFS
+
+- 持久化的实现
+
+## HBASE Java API
+
+> 注意：**所有的HBASE客户端所连接的服务端都是Zookeeper**
+>
+> `Conf.set("hbase.zookeeper.quorum")`，`"node1:2181,node2:2181,node3:2181"`
+>
+> Get操作时一个Result对象就代表一个RowKey数据对象
 
 
 
 
 
+## Hbase与MapReduce的集成
 
+### 应用场景
 
+- HBASE：分布式存储
+- MapReduce、Spark：分布式计算
+- 大数据的本质：一系列大数据的处理软件工具对大量数据进行分析处理
+  - 存储：HBASE
+  - 计算：MapReduce
 
+### 集成原理
 
+- MapReduce五大阶段
+  - Input
+    - TableInputFormat
+  - Map
+  - Shuffle
+  - Reduce
+  - Outptut
+    - TableOutputFormat
 
+### 读HBASE数据
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 规则
+  - Driver类
+    - 读HBASE提供的封装后的方法
+    - 
 
 ----------

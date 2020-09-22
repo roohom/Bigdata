@@ -7,9 +7,13 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="MapReduce" />
+        <module name="Hbase" />
         <module name="Redis" />
         <module name="HDFS" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="HBASE" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
 </project>

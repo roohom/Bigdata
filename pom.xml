@@ -12,6 +12,7 @@
         <module>HDFS</module>
         <module>MapReduce</module>
         <module>Redis</module>
+        <module>Hbase</module>
     </modules>
 
 
