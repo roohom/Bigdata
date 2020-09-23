@@ -418,6 +418,8 @@
 
 #### 写入
 
+![WriteHbase](.\ReadAndWriteHbase\WriteHbase.png)
+
 - Step1：根据表名找到这张表对应的所有Region信息
   - **问：怎么能得到表所对应的所有的Region信息？**
     - 通过元数据来获取
@@ -449,6 +451,8 @@
     - 分由regionserver来分，两个region的去向由Master来分配
 
 #### 读取
+
+![ReadHbase](.\ReadAndWriteHbase\ReadHbase.png)
 
 - step1：根据表名从元数据获取对应的region信息
 - step2：
@@ -533,9 +537,542 @@
 
 ### 读HBASE数据
 
-- 规则
-  - Driver类
-    - 读HBASE提供的封装后的方法
-    - 
+[代码示例传送门](https://github.com/roohom/Bigdata/blob/master/Hbase/src/main/java/HbaseMapReduce/ReadHbaseTable.java)
+
+### 写HBASE数据
+
+[代码示例传送门](https://github.com/roohom/Bigdata/blob/master/Hbase/src/main/java/HbaseMapReduce/WriteHbaseTable.java)
 
 ----------
+
+## BulkLoad
+
+### HBASE导入数据的两种方式
+
+- 第一种方式：**Put**
+  - 按照完整的放肆写入写入规则写入数据到HBASE，数据先进入内存
+  - 问题：如果一次性写入的数据比较大，会导致HBASE的网络、内存、磁盘IO大量地被占用
+- 第二种方式：**BulkLoad**
+  - Step1：将大量的数据转换为HFILE文件
+  - Step2：将转换好的文件加载到HBASE对应的列族的目录中
+  - 优点：避免了数据经过内存
+
+### BulkLoad实现
+
+- 实现1：代码实现
+
+  - 在HBASE中创建一张空表
+
+    ~~~
+    create 'mrhbase','info'
+    ~~~
+
+  - Step1：编辑MapReduce的程序，用于将一个普通文件转换为HFILE文件
+
+    ~~~shell
+    yarn jar bulk.jar bigdata.itcast.cn.hbase.bulk.TransHfileMR /user/hbase/input/testfile.txt /user/hbase/output
+    ~~~
+  
+    [代码示例]
+  
+  - Step2：将生成的HFILE文件加载到HBASE的表中
+  
+    ~~~shell
+    yarn jar bulk.jar bigdata.itcast.cn.hbase.bulk.BulkLoadToHbase /user/hbase/output
+    ~~~
+  
+    [代码示例]
+  
+- 实现2：HBASE自带程序
+
+  - HBASE自带一些MapReduce程序
+
+    - 查看帮助
+
+      ~~~shell
+      yarn jar /export/servers/hbase-2.1.0/lib/hbase-mapreduce-2.1.0.jar
+      ~~~
+
+  - ImportTSV：将各种类型的文件通过MapReduce使用bulkload或者Put的方式将数据写入Hbase
+
+    ```shell
+    yarn jar /export/servers/hbase-2.1.0/lib/hbase-mapreduce-2.1.0.jar importtsv
+    ```
+
+  - 方式一：通过put的方式将数据写入这张表
+
+    ```shell
+    Usage: importtsv -Dimporttsv.columns=a,b,c <tablename> <inputdir>
+    ```
+
+    ```shell
+    yarn jar /export/servers/hbase-2.1.0/lib/hbase-mapreduce-2.1.0.jar importtsv -Dimporttsv.columns=HBASE_ROW_KEY,info:name,info:age,info:age  mrhbase /user/hbase/input/testfile.txt
+    ```
+
+    - -Dimporttsv.columns：用于指定文件中的每一列与HBASE表的每一列的对应关系
+
+  - 方式二：通过bulk方式来实现
+
+    - step1：用于将输入文件转换为HFILE文件
+
+      ```shell
+      yarn jar /export/servers/hbase-2.1.0/lib/hbase-mapreduce-2.1.0.jar importtsv -Dimporttsv.columns=HBASE_ROW_KEY,info:name,info:age,info:age -Dimporttsv.bulk.output=/user/hbase/output mrhbase /user/hbase/input/testfile.txt
+      ```
+
+      - -Dimporttsv.bulk.output：用于指定生成的HFILE所在的位置
+
+    - step2：通过bulkload加载到表中
+
+      ```shell
+      yarn jar /export/servers/hbase-2.1.0/lib/hbase-mapreduce-2.1.0.jar completebulkload  /user/hbase/output mr hbase -loadTable
+      ```
+
+  - 默认分隔符为tsv，如果不是tsv，指定：seperator = 文件的分隔符
+
+    ```shell
+    '-Dimporttsv.separator=,'
+    ```
+
+    
+
+## Hive与HBASE集成
+
+> Hbase自带count命令用于统计一张表中一共有多少行
+
+### SQL  on HBASE
+
+- 在Hive中数学SQL，数据存储在HBASE
+- 本质：底层是通过MapReduce来读写HBASE数据
+- Hbase有一个专用的SQL on Hbase工具：Phoenix
+
+  - 这款工具是直接基于Hbase的底层API来实现的
+  - 这是操作Hbase最快的一款SQL on Hbase工具
+
+### Hive与hbase集成
+
+- 应用场景：希望使用SQL语句操作HBASE
+
+- 使用前提：
+
+  - 保证Hive中必须有HBASE的jar包
+
+  - 修改hive-site.xml：Hive通过SQL访问HBASE，Hive就是HBASE的客户端，就需要连接Zookeeper
+
+    ~~~xml
+    <property>
+    	<name>hive.zookeeper.quorum</name>
+    	<value>node1,node2,node3</value>
+    </property>
+     <property>
+    	<name>hbase.zookeeper.quorum</name>
+    	<value>node1,node2,node3</value>
+    </property>
+    <property>
+        <name>hive.server2.enable.doAs</name>
+        <value>false</value>
+    </property>
+    ~~~
+
+  - 修改hive-env.sh
+
+    ```
+    export HBASE_HOME=/export/servers/hbase-2.1.0
+    ```
+
+- 试用步骤：
+
+  - 启动Hive
+
+    ~~~shell
+    #先启动metastore服务
+    start-metastore.sh 
+    #然后启动hiveserver
+    start-hiveserver2.sh
+    #然后启动beeline
+    start-beeline.sh
+    ~~~
+
+  - 在Hive中创建关联hbase表
+
+  - 如果Hbase中表不存在：【用的比较少】
+
+    * 创建测试数据文件
+
+      ```shell
+      vim /export/datas/hive-hbase.txt
+      1,zhangsan,80
+      2,lisi,60
+      3,wangwu,30
+      4,zhaoliu,70
+      ```
+
+  - 创建测试表
+
+    ```sql
+    --创建测试数据库
+    create database course;
+    --切换数据库
+    use course;
+    --创建原始数据表
+    create external table if not exists course.score(
+    id int,
+    cname string,
+    score int
+    ) row format delimited fields terminated by ',' stored as textfile ;
+    --加载数据文件
+    load data local inpath '/export/datas/hive-hbase.txt' into table score;
+    ```
+
+  - 创建一张Hive与HBASE的映射表
+
+    ```sql
+    create table course.hbase_score(
+    id int,
+    cname string,
+    score int
+    )  
+    stored by 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'  
+    with serdeproperties("hbase.columns.mapping" = "cf:name,cf:score") 
+    tblproperties("hbase.table.name" = "hbase_score");
+    ```
+
+  - 将测试表的数据写入映射表
+
+    ```sql
+     set hive.exec.mode.local.auto=true;
+     insert overwrite table course.hbase_score select id,cname,score from course.score;
+    ```
+
+  - **如果Hbase中表已存在，只能创建外部表【比较常用的方式】**
+
+    ```sql
+      create external table course.stu(
+      key string,
+      name string,
+      age  string,
+      phone string
+      )  
+      stored by 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'  
+      with serdeproperties("hbase.columns.mapping" = ":key,basic:name,basic:age,other:phone") 
+      tblproperties("hbase.table.name" = "student:stu_info");
+    ```
+
+    * 注意事项：
+      * Hive关联时
+        * 如果Hbase表不存在，**默认以hive表的第一列作为Hbase的rowkey**
+        * 如果表已存在，使用:key来标识rowkey
+      * Hive与Hbase的关联表
+        * 是不能通过load命令加载数据进去的
+        * Hbase中的数据时特殊的存储，内存和Storefile存储，必须经过程序写入
+        * load命令是直接将文件放入目录的方式实现的，所以不能用于加载数据到hbase
+        * **只能用insert命令**
+
+## HBASE热点
+
+- 现象
+  - 读写数据时，大量的读写请求都集中在某个Region或者某个RegionServer上，导致某个Region的负载较高，影响读写性能
+
+- 原因
+  - 分区规则：按照范围分区，所要读写的rowkey在哪个范围就读取哪个分区
+  - 根本原因：所有(大部分)的rowkey都集中在一个范围
+
+- 解决
+  - 在创建表的时候要根据rowkey的设计进行合理的规划分区
+    - 表建好以后就有多个分区
+  - rowkey的设计
+    - rowkey作为唯一索引：rowkey的值是最常用的查询条件，可以走索引查询
+    - rowkey必须构建散列，**不能是连续的**
+
+## 预分区与Rowkey设计
+
+### 预分区
+
+- 命令行实现：
+
+  ~~~
+  create 'bs1:t1','f1',SPLITS=>['10','20','30','40']
+  ~~~
+
+- 在Java API中创建分区：表名中包含日期(分割区间**起始值**)
+
+  ~~~java
+  byte[][] splitKeys = {
+  	Bytes.toBytes(10),
+  	Bytes.toBytes(20),
+  	Bytes.toBytes(30),
+  	Bytes.toBytes(40),
+  }
+  admin.createTable(tablename,splitKeys)
+  ~~~
+
+> 注意：region的范围也是根据rowkey的前缀匹配
+>
+> **实际工作中先设计rowkey，再做预分区**
+
+### RowKey设计
+
+- Rowkey设计的重要性
+  - 唯一标识一行
+  - 作为HBASE中的唯一索引，既不能创建也不能删除：只有基于rowkey的查询才走索引
+  - 决定了分区：rowkey不能是有序的，会导致热点问题
+- 基本原则：设计rowkey必须结合业务需求设计
+- 唯一原则：类似于MySQL中主键的概念，必须唯一标识一行
+  - Put：既作为插入语句也作为更新语句
+- 组合原则：将经常作为查询条件的列组合作为rowkey
+  - **HBASE只有rowkey作为索引，只有根据rowkey作为查询条件才能走索引查询**
+  - 举例：
+    - 用时间+订单id组作为rowkey
+      - 基于时间
+      - 基于时间+订单id
+  - 不是经常作为查询条件的列不要作为rowkey，会影响rowkey的长度设计，导致性能下降
+  - **Rowkey只是利用字段的组合来设计存储，满足查询的需求，并不影响这些字段的实际独立存储**
+- 散列原则
+  - 构建随机散列的前缀，避免产生热点问题
+  - 方案一：在rowkey之前加上一个随机值做组合rowkey
+    - 可行，但是会影响读的效率，因为根本不知道随机值是什么
+  - 方案二：基于前缀构建编码
+    - 例如将时间戳进行编码，构建组合rowkey
+      - 在读的时候先对时间戳进行编码构建rowkey再进行查询
+      - 查询到以后再进行解码
+  - 方案三：对以连续值作为rowkey的值进行反转再作为rowkey
+    - 在读的时候，先反转构建rowkey再查询
+- 长度原则：在满足业务的情况下rowkey的设计越短越好（不建议超过100位）
+  - 有比如timestamp_userid_orderid此类的rowkey，由于rowkey是前缀匹配，如果只知道userid或者orderid，那么基于rowkey查询就不可用了
+
+### 二级索引
+
+- HBASE只有自带的一级索引：rowkey
+- 思想：通过走两次索引来实现数据查询，代替全表扫描
+
+- 实现思路：
+  - 构建一张索引表
+    - 1、先查询索引表，根据订单id，走索引查询，得到这个订单在原表中的rowkey
+    - 2、根据得到的rowkey去查询原表，走索引查询，得到这个订单的所有数据
+- **问题：原表和索引表如何进行数据同步？**
+  - 方案一：在客户端构建两张表的Put对象，只要往原表中插入，就往索引表插入一条
+    - 客户端请求增多
+    - 容易导致数据不一致
+      - 可能一条Put失败，一条可成功
+  - 方案二：自己HBASE中构建协处理器【类似于Hive中的UDF】
+    - 协处理器：HBASE中没有功能，可以自己开发
+    - HBASE提供了两种协处理器的接口
+      - Observer：观察者类的协处理器
+        - 能实现监听，监听原表，只要原表中多了一条数据，让协处理器自动往索引表中插入一条数据
+        - 类似于MySQL中的触发器
+      - EndPoint：终端者类的协处理器，一般用于做信息统计，类似于MySQL中的存储过程
+    - 方案三：通过第三方框架来实现
+      - Phoenix：专门问HBASE涉及的一款辅助工具
+        - 底层是通过多个封装好的协处理器来实现的
+        - **可以通过SQL操作HBASE：直接基于HBASE底层的API直接实现的**
+        - **辅助构建各种HBASE中的二级索引，并自动维护**
+      - ES：全文索引引擎
+        - ES+HBASE
+
+### 列族与列的设计
+
+- 列族
+  - 个属原则：一般不建议超过3个，会影响性能
+  - 长度原则：在满足需求的情况下，越短越好（底层存储是冗余的）
+- 列的设计
+  - 与普通的列名称一致，要能通过列名知道这一列的含义
+  - 多版本，可以利用多版本来实现数据存储
+
+
+
+## LSM模型与列族属性
+
+### LSM设计
+
+- 让数据写入先进入内存，后台将数据不断地写入磁盘，提供高性能的读写的特性
+- LOG：WAL
+
+- 特征：通过顺序写来保证写的性能，内存中的数据不断Flush到文件，导致会有多个文件
+
+### Flush
+
+> 在2.x版本之前：Flush是Region级别的，只要有一个MemStore达到阈值触发flush，该region中所有的Memstore都会Flush
+
+- 功能：将MemStore中的数据溢写到HDFS中，变成StoreFile文件
+
+- 参数配置：自动触发
+
+  ~~~properties
+  #2.x版本之前的机制
+  #region的memstore的触发
+  #判断如果某个region中的某个memstore达到这个阈值，那么触发flush，flush这个region的所有memstore
+  hbase.hregion.memstore.flush.size=128M
+  #region的触发级别：如果没有memstore达到128，但是所有memstore的大小加在一起大于等于128*4
+  #触发整个region的flush
+  hbase.hregion.memstore.block.multiplier=4
+  #regionserver的触发级别：所有region所占用的memstore达到阈值，就会触发整个regionserver中memstore的溢写
+  #从memstore占用最多的Regin开始flush
+  hbase.regionserver.global.memstore.size=0.4
+  hbase.regionserver.global.memstore.size.lower.limit = 0.4*0.95 =0.38
+  ~~~
+
+  ~~~properties
+  #2.x版本以后的机制
+  #设置了一个flush的最小阈值
+  #memstore的判断发生了改变：max("hbase.hregion.memstore.flush.size / column_family_number",hbase.hregion.percolumnfamilyflush.size.lower.bound.min)
+  #如果memstore高于上面这个结果，就会被flush，如果低于这个值，就不flush，如果整个region所有的memstore都低于，全部flush
+  #水位线 = max（128 / 列族个数,16）,列族一般给3个 ~ 42M
+  #如果memstore的空间大于42,就flush，如果小于就不flush，如果都小于，全部flush
+  hbase.hregion.percolumnfamilyflush.size.lower.bound.min=16M
+  #2.x中多了一种机制：In-Memory-compact,如果开启了【不为none】，会在内存中对需要flush的数据进行合并
+  #合并后再进行flush，将多个小文件在内存中合并后再flush
+  hbase.hregion.compacting.memstore.type=None|basic
+  ~~~
+
+  
+
+- 手动触发：**尽量避免HBASE自动触发flush**
+  - HBASE自动触发flush、Compact、Split会导致这个过程占用大量的资源，为了避免影响业务其他的操作，使用定期的手动触发来避免自动触发
+  - 工作中将以上自动触发的参数调大，在达不到的情况下，定时手动触发
+    - hbase shell：`flush 'tableName' | 'regionName'`
+
+### Compact
+
+- 功能：将StoreFile文件进行合并，变成大文件
+
+- minor Compaction：轻量级的合并，每次将最老的几个storefile文件合并成一个文件
+
+- major compaction：重量级的合并，将整个store中的storefile进行合并
+  
+- 合并时，会将标记为更新或者删除的数据进行真正的物理删除
+  
+- 封装脚本定时运行：在linux命令行执行hbase命令
+
+  - 一行一个命令，**最后加一个exit**
+
+  ~~~
+  hbase shell /export/datas/hbasesh.txt
+  ~~~
+
+- 参数配置
+
+  ~~~properties
+  hbase.hregion.majorcompaction=7天
+  ~~~
+
+  - 工作中需要配置手动触发，避免自动触发，以免影响业务
+
+    ~~~properties
+    hbase.hregion.majorcompaction=0
+    ~~~
+
+  - 定期手动触发
+
+    ~~~
+    major_compact
+    ~~~
+
+    
+
+### Split
+
+- 功能：当一个region的数据量过大，导致负载比较大，将一个region分裂为两个region
+
+- 参数配置
+
+  ~~~properties
+  #region阈值
+  hbase.hregion.max.filesize=10GB
+  #0.94之前：判断region中是否有一个storefile文件是否达到阈值，如果达到，就分裂
+  hbase.regionserver.region.split.policy=org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy
+  
+  #0.94开始
+  #规则：Math.min(getDesiredMaxFileSize(),initialSize * tableRegionsCount * tableRegionsCount * tableRegionsCount)
+  #initialSize = 128 X 2
+  #min(10GB,256 x region个数的3次方)
+  hbase.regionserver.region.split.policy=org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy
+  
+  #2.x开始
+  #规则：return tableRegionsCount == 1  ? this.initialSize : getDesiredMaxFileSize();
+  #判断region个数是否为1，如果为1，就按照256分，如果不为1，就按照10GB来分
+  hbase.regionserver.region.split.policy=org.apache.hadoop.hbase.regionserver.SteppingSplitPolicy
+  ~~~
+
+- 工作中需要避免hbase自动分裂，需要手动干预分裂：导致集群的负载过高
+
+  - 关闭自动分裂
+
+    ~~~
+    DisabledRegionSplitPolicy
+    ~~~
+
+  - 手动split
+
+    ~~~
+    split
+    ~~~
+
+## 常用列族属性
+
+- NAME：标记列族的名称
+
+- TTL：版本存活时间，类似于redis中的expire，设置数据的存活时间
+
+- VERSIONS：最大版本数，表示某一列最多允许存储多少版本的 值
+
+- MIN_VERSIONS：最小版本数，一般与TTL搭配使用，当达到TTL时间以后，不会删除所有多版本，默认保留最新的最小版本数
+
+- BLOOMFILTER：布隆过滤器
+
+  - NONE：不开启布隆过滤
+  - ROW：行级布隆过滤
+    - 当查询数据扫描storefile文件时，如果开启了row级别布隆过滤，会判断当前的storefile文件中是否有需要查询的rowkey，如果有就读文件，如果没有，就跳过这个文件
+  - ROWCOL：行列级布隆过滤
+    - 当查询数据扫描storefile文件时，如果开启了row级别布隆过滤，会判断当前的storefile文件中是否有需要查询的rowkey以及对应的列族和列，如果有就读文件，如果没有，就跳过这个文件
+
+- IN_MEMORY：最高缓存级别，一般不要开启，meta表的缓存就是这个级别
+
+- BLOCKCACHE：是否开启列族的缓存，默认都是开启的
+
+  - 工作中要将不经常读写的列族关闭缓存
+  - 缓存中使用LRU算法进行淘汰
+
+- BLOCKSIZE：文件块的大小，默认为64KB，不建议调整
+
+  - 调小：一个文件的块的个数增加，索引增加，占用的内存更多
+  - 调大：一个文件的块的个数减少，索引减少，占用内存更少
+
+- COMPRESSION：Hbase中写入数据的压缩，就是Hadoop的压缩
+
+  - 让Hadoop先支持压缩机制
+
+    ```
+    hadoop checknative
+    ```
+
+  - 让Hbase支持压缩
+
+    - 关闭Hbase的服务
+
+    - 配置Hbase的压缩本地库： lib/native/Linux-amd64-64
+
+      ```
+      cd /export/servers/hbase-2.1.0/
+      mkdir lib/native
+      ```
+
+    - 将Hadoop的压缩本地库创建一个软链接到Hbase的lib/native目录下
+
+      ```
+      ln -s /export/servers/hadoop-2.7.5/lib/native /export/servers/hbase-2.1.0/lib/native/Linux-amd64-64
+      ```
+
+  - 启动Hbase服务
+
+    ```
+    start-hbase.sh
+    ```
+
+  - 创建表
+
+    ```
+    create 'testcompress',{NAME=>'cf1',COMPRESSION => 'SNAPPY'}
+    put 'testcompress','001','cf1:name','laoda'
+    ```
+
+    
+
