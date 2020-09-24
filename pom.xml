@@ -13,6 +13,7 @@
         <module>MapReduce</module>
         <module>Redis</module>
         <module>Hbase</module>
+        <module>Kafka</module>
     </modules>
 
 

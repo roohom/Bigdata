@@ -439,7 +439,7 @@
   - **问：如何能知道这个region所在的regionserver是哪个？**
     - 通过元数据来获取这个region所对应的regionserver的地址
 - Step4：regionserver将输入写入对应的region，根据列族判断写入哪个Store
-- Step5：先写WAL(HLog)，然后将数据写入MemStore
+- Step5：**先写WAL(HLog)**，然后将数据写入MemStore
 - Step6：写入流程结束，返回客户端
   - Flush：当menstore中的数据达到一定条件，会触发将内存中的数据刷写如HDFS变成Sorefile文件
   - Compact：将多个storefile文件进行合并成大文件
@@ -543,6 +543,31 @@
 
 [代码示例传送门](https://github.com/roohom/Bigdata/blob/master/Hbase/src/main/java/HbaseMapReduce/WriteHbaseTable.java)
 
+
+
+- **问题**：如果将代码打包成jar上传至Linux运行会报错`ClassNotFoundError:org/apache/hadoop/hbase/HBaseConfiguration`
+
+  - 解决：
+
+    - 将HBASE的jar包放入hadoop的环境变量
+
+      ~~~shell
+      [root@node1 datas]# hbase mapredcp
+      ~~~
+
+      ~~~shell
+      [root@node1 datas]# hbase mapredcp
+      /export/servers/hbase-2.1.0/lib/shaded-clients/hbase-shaded-mapreduce-2.1.0.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/audience-annotations-0.5.0.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/commons-logging-1.2.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/findbugs-annotations-1.3.9-1.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/htrace-core4-4.2.0-incubating.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/log4j-1.2.17.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/slf4j-api-1.7.25.jar
+      ~~~
+
+    - 声明环境变量
+
+      ~~~shell
+      [root@node1 datas]# export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:/export/servers/hbase-2.1.0/lib/shaded-clients/hbase-shaded-mapreduce-2.1.0.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/audience-annotations-0.5.0.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/commons-logging-1.2.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/findbugs-annotations-1.3.9-1.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/htrace-core4-4.2.0-incubating.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/log4j-1.2.17.jar:/export/servers/hbase-2.1.0/lib/client-facing-thirdparty/slf4j-api-1.7.25.jar
+      ~~~
+
+      
+
 ----------
 
 ## BulkLoad
@@ -573,7 +598,7 @@
     yarn jar bulk.jar bigdata.itcast.cn.hbase.bulk.TransHfileMR /user/hbase/input/testfile.txt /user/hbase/output
     ~~~
   
-    [代码示例]
+    [代码示例传送门](https://github.com/roohom/Bigdata/blob/master/Hbase/src/main/java/BulkLoad/TransHfileMR.java)
   
   - Step2：将生成的HFILE文件加载到HBASE的表中
   
@@ -581,7 +606,7 @@
     yarn jar bulk.jar bigdata.itcast.cn.hbase.bulk.BulkLoadToHbase /user/hbase/output
     ~~~
   
-    [代码示例]
+    [代码示例传送门](https://github.com/roohom/Bigdata/blob/master/Hbase/src/main/java/BulkLoad/BulkToHbase.java)
   
 - 实现2：HBASE自带程序
 
@@ -881,7 +906,7 @@
 
 ## LSM模型与列族属性
 
-### LSM设计
+### LSM(Log-Structured Merge-tree)设计
 
 - 让数据写入先进入内存，后台将数据不断地写入磁盘，提供高性能的读写的特性
 - LOG：WAL

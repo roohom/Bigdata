@@ -157,6 +157,13 @@ public class HbaseDDLTest {
     }
 
 
+    /**
+     * 获取管理员对象
+     *
+     * @param conn 连接对象
+     * @return 管理员对象
+     * @throws IOException IO异常
+     */
     public HBaseAdmin getAdmin(Connection conn) throws IOException {
         return (HBaseAdmin) conn.getAdmin();
     }

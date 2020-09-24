@@ -9,6 +9,7 @@
         <module name="MapReduce" />
         <module name="Hbase" />
         <module name="Redis" />
+        <module name="Kafka" />
         <module name="HDFS" />
       </profile>
     </annotationProcessing>

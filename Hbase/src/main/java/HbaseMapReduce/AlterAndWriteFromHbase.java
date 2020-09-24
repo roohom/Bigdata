@@ -28,15 +28,10 @@ public class AlterAndWriteFromHbase {
 
     public void alterTable(HBaseAdmin admin) throws IOException {
         TableName tableName = TableName.valueOf("student:mrwrite");
-//        admin.disableTable(tableName);
-//        HTableDescriptor descriptor = admin.getTableDescriptor(tableName);
-//        HColumnDescriptor basic = new HColumnDescriptor("basic");
-//        descriptor.addFamily(basic);
-        TableDescriptorBuilder builder = TableDescriptorBuilder.newBuilder(tableName);
-        ColumnFamilyDescriptor basic = ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes("basic")).build();
-        builder.setColumnFamily(basic);
-        TableDescriptor build = builder.build();
-        admin.createTable(build);
+        admin.disableTable(tableName);
+        HTableDescriptor descriptor = admin.getTableDescriptor(tableName);
+        HColumnDescriptor basic = new HColumnDescriptor("basic");
+        descriptor.addFamily(basic);
     }
     public HBaseAdmin getAdmin(Connection conn) throws IOException {
         return (HBaseAdmin) conn.getAdmin();
