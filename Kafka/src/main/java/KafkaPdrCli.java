@@ -4,33 +4,29 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.Properties;
 
 /**
- * @ClassName: KafkaPdrClient
+ * @ClassName: KafkaPdrCli
  * @Author: Roohom
- * @Function: 生产者客户端
- * @Date: 2020/9/24 20:51
+ * @Function: kafka生产者客户端
+ * @Date: 2020/9/25 16:47
  * @Software: IntelliJ IDEA
  */
-public class KafkaPdrClient {
+public class KafkaPdrCli {
     public static void main(String[] args) {
         Properties props = new Properties();
         props.put("bootstrap.servers","node1:9092,node2:9092,node3:9092");
         props.put("acks","all");
+        props.put("linger.ms",1);
         props.put("retries",0);
         props.put("batch.size",16384);
-        props.put("linger.ms",1);
         props.put("buffer.memory",33445532);
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(props);
         for (int i = 0; i < 10; i++) {
-            //指定Key,就按照Key的hash取余
-            producer.send(new ProducerRecord<String, String>("bigdata",Integer.toString(i),"CodeForFree"+i));
-            //没有指定key，就轮询
-//            producer.send(new ProducerRecord<String, String>("bigdata","CodeForFree"+i))
-            //指定分区，同时也需要指定Key和Value
-//            producer.send(new ProducerRecord<String, String>("bigdata",0,Integer.toString(i),"CodeForFree"+i));
+            producer.send(new ProducerRecord<String, String>("bigdata",Integer.toString(i),"CodeForNikonCammera"+i));
+//            producer.send(new ProducerRecord<String, String>("bigdata","CodeForNikonCammera"+i));
+//            producer.send(new ProducerRecord<String, String>("bigdata",0,Integer.toString(i),"CodeForNikonCammera"+i));
         }
-        //不要忘记关闭客户端，经试验，不关闭，消费者接收不到
         producer.close();
     }
 }
