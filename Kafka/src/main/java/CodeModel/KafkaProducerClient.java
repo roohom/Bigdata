@@ -33,6 +33,8 @@ public class KafkaProducerClient {
         props.put("linger.ms", 1);
         //生产数据的缓存
         props.put("buffer.memroy", 33445532);
+        //用于实现自定义分区
+//        props.put("partitioner.class","CodeModel.partition.UserPartition");
         //序列化机制：kafka是以KV形式进行数据存储，K可以没有，写入的数据是Value
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -50,11 +52,11 @@ public class KafkaProducerClient {
             //方式一:ProducerRecord<String, String>(TopicName,K,V)
 //            producer.send(new ProducerRecord<String, String>("bigdata", Integer.toString(i), "itcast" + i));
             //方式二:指定Topic和Value，没有KEY
-//            producer.send(new ProducerRecord<String, String>("bigdata","itcast"+i));
+            producer.send(new ProducerRecord<String, String>("bigdata","itcast"+i));
             //方式三：指定写入一个分区
-            producer.send(new ProducerRecord<String, String>("bigdata", 0, Integer.toString(i), "itcast" + i));
+//            producer.send(new ProducerRecord<String, String>("bigdata", 0, Integer.toString(i), "itcast" + i));
         }
-        //关闭生产者，不关闭消费者收不到(batch没满的情况下)
+        //关闭生产者，不关闭消费者收不到
         producer.close();
     }
 }
