@@ -6,11 +6,12 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="MapReduce" />
-        <module name="Hbase" />
+        <module name="ES" />
         <module name="Redis" />
-        <module name="Kafka" />
+        <module name="Hbase" />
+        <module name="MapReduce" />
         <module name="HDFS" />
+        <module name="Kafka" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
