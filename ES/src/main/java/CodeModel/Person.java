@@ -1,5 +1,7 @@
+package CodeModel;
+
 /**
- * @ClassName: Person
+ * @ClassName: CodeModel.Person
  * @Author: Roohom
  * @Function:
  * @Date: 2020/9/28 20:36
@@ -45,7 +47,7 @@ public class Person {
 
     @Override
     public String toString() {
-        return "Person{" +
+        return "CodeModel.Person{" +
                 "name='" + name + '\'' +
                 ", age=" + age +
                 ", phone='" + phone + '\'' +

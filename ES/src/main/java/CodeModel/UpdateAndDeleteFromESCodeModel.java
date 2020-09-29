@@ -1,5 +1,6 @@
+package CodeModel;
+
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -15,7 +16,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
- * @ClassName: UpdateAndDeleteFromESCodeModel
+ * @ClassName: CodeModel.UpdateAndDeleteFromESCodeModel
  * @Author: Roohom
  * @Function: 更新与删除ES数据代码模板
  * @Date: 2020/9/28 22:04

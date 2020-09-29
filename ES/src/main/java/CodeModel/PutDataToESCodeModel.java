@@ -1,3 +1,5 @@
+package CodeModel;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -16,7 +18,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 
 /**
- * @ClassName: PutDataToESCodeModel
+ * @ClassName: CodeModel.PutDataToESCodeModel
  * @Author: Roohom
  * @Function: 向ES写入数据的代码模板
  * @Date: 2020/9/27 21:36

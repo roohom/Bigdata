@@ -1,0 +1,96 @@
+2020.09.29 at 20:02:44 CST INFO  org.elasticsearch.plugins.PluginsService 177 logPluginInfo - no modules loaded
+2020.09.29 at 20:02:44 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2020.09.29 at 20:02:44 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2020.09.29 at 20:02:44 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2020.09.29 at 20:02:44 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2020.09.29 at 20:02:44 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [force_merge], size [1], queue size [unbounded]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [fetch_shard_started], core [1], max [16], keep alive [5m]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [listener], size [4], queue size [unbounded]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [index], size [8], queue size [200]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [refresh], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [generic], core [4], max [128], keep alive [30s]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [warmer], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [search], size [13], queue size [1k]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [flush], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [fetch_shard_store], core [1], max [16], keep alive [5m]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [management], core [1], max [5], keep alive [5m]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [get], size [8], queue size [1k]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [bulk], size [8], queue size [200]
+2020.09.29 at 20:02:45 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [snapshot], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 136 <init> - node_sampler_interval[5s]
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.eventLoopThreads: 16
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - Platform: Windows
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.noUnsafe: true
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - sun.misc.Unsafe: unavailable (io.netty.noUnsafe)
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - Java version: 8
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - java.nio.DirectByteBuffer.<init>(long, int): unavailable
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.tmpdir: C:\Users\rooho\AppData\Local\Temp (java.io.tmpdir)
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.bitMode: 64 (sun.arch.data.model)
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.noPreferDirect: true
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.maxDirectMemory: -1 bytes
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.uninitializedArrayAllocationThreshold: -1
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.noKeySetOptimization: true
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.selectorAutoRebuildThreshold: 512
+2020.09.29 at 20:02:46 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - org.jctools-core.MpscChunkedArrayQueue: unavailable
+2020.09.29 at 20:02:47 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 194 addTransportAddresses - adding address [{#transport#-1}{MmDEmHJDTqyeKK0INtcm2Q}{node1}{192.168.88.221:9300}]
+2020.09.29 at 20:02:47 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.processId: 14248 (auto-detected)
+2020.09.29 at 20:02:47 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Djava.net.preferIPv4Stack: false
+2020.09.29 at 20:02:47 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Djava.net.preferIPv6Addresses: false
+2020.09.29 at 20:02:47 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 89 debug - Loopback interface: lo (Software Loopback Interface 1, 127.0.0.1)
+2020.09.29 at 20:02:47 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 84 debug - Failed to get SOMAXCONN from sysctl and file \proc\sys\net\core\somaxconn. Default: 200
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.machineId: 00:50:56:ff:fe:c0:00:08 (auto-detected)
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 84 debug - -Dio.netty.leakDetection.level: simple
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 84 debug - -Dio.netty.leakDetection.maxRecords: 4
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.numHeapArenas: 16
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.numDirectArenas: 16
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.pageSize: 8192
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.maxOrder: 11
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.chunkSize: 16777216
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.tinyCacheSize: 512
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.smallCacheSize: 256
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.normalCacheSize: 64
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.maxCachedBufferCapacity: 32768
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.cacheTrimInterval: 8192
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.useCacheForAllThreads: true
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.allocator.type: pooled
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.threadLocalDirectBufferSize: 65536
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - -Dio.netty.maxThreadLocalCharBufferSize: 16384
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 84 debug - -Dio.netty.buffer.bytebuf.checkAccessible: true
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 79 debug - Loaded default ResourceLeakDetector: io.netty.util.ResourceLeakDetector@3fbcfe81
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - -Dio.netty.recycler.maxCapacityPerThread: disabled
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - -Dio.netty.recycler.maxSharedCapacityFactor: disabled
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - -Dio.netty.recycler.linkCapacity: disabled
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.netty4.Netty4InternalESLogger 74 debug - -Dio.netty.recycler.ratio: disabled
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.TcpTransport 500 connectToNode - connected to node [{node1}{sfNoCWvXTdyLYUzU8myBzA}{RgLRAcJTRZeXRwBPbJAMbA}{192.168.88.221}{192.168.88.221:9300}]
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 194 addTransportAddresses - adding address [{#transport#-2}{NreriVKzTvSfa-JSQ0W-sg}{node2}{192.168.88.222:9300}]
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.TcpTransport 500 connectToNode - connected to node [{node2}{NhR7hhzCRF6k7UlW1Jk7zw}{REQt667USwKRJo2U8YMbfQ}{192.168.88.222}{192.168.88.222:9300}]
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 194 addTransportAddresses - adding address [{#transport#-3}{L4DeV3tiR1Wh0vTiwfjq2w}{node3}{192.168.88.223:9300}]
+2020.09.29 at 20:02:48 CST DEBUG org.elasticsearch.transport.TcpTransport 500 connectToNode - connected to node [{node3}{etW5Rrc3TumRa2JrhpHzdA}{Wpj2FOkuRn2GYckjPMaB7g}{192.168.88.223}{192.168.88.223:9300}]
+2020.09.29 at 20:03:09 CST INFO  org.elasticsearch.plugins.PluginsService 177 logPluginInfo - no modules loaded
+2020.09.29 at 20:03:09 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2020.09.29 at 20:03:09 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2020.09.29 at 20:03:09 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2020.09.29 at 20:03:09 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2020.09.29 at 20:03:09 CST INFO  org.elasticsearch.plugins.PluginsService 180 logPluginInfo - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [force_merge], size [1], queue size [unbounded]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [fetch_shard_started], core [1], max [16], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [listener], size [4], queue size [unbounded]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [index], size [8], queue size [200]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [refresh], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [generic], core [4], max [128], keep alive [30s]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [warmer], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [search], size [13], queue size [1k]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [flush], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [fetch_shard_store], core [1], max [16], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [management], core [1], max [5], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [get], size [8], queue size [1k]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [bulk], size [8], queue size [200]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.threadpool.ThreadPool 207 <init> - created thread pool: name [snapshot], core [1], max [4], keep alive [5m]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 136 <init> - node_sampler_interval[5s]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 194 addTransportAddresses - adding address [{#transport#-1}{sPXOXRs0SYOknAL7sqn31A}{node1}{192.168.88.221:9300}]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.transport.TcpTransport 500 connectToNode - connected to node [{node1}{sfNoCWvXTdyLYUzU8myBzA}{RgLRAcJTRZeXRwBPbJAMbA}{192.168.88.221}{192.168.88.221:9300}]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 194 addTransportAddresses - adding address [{#transport#-2}{NvqP1szXTCuy4xQh4s4NvA}{node2}{192.168.88.222:9300}]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.transport.TcpTransport 500 connectToNode - connected to node [{node2}{NhR7hhzCRF6k7UlW1Jk7zw}{REQt667USwKRJo2U8YMbfQ}{192.168.88.222}{192.168.88.222:9300}]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.client.transport.TransportClientNodesService 194 addTransportAddresses - adding address [{#transport#-3}{_8GP6x-lQlCePhypH0eFcw}{node3}{192.168.88.223:9300}]
+2020.09.29 at 20:03:09 CST DEBUG org.elasticsearch.transport.TcpTransport 500 connectToNode - connected to node [{node3}{etW5Rrc3TumRa2JrhpHzdA}{Wpj2FOkuRn2GYckjPMaB7g}{192.168.88.223}{192.168.88.223:9300}]
