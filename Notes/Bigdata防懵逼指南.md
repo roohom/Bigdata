@@ -97,7 +97,7 @@
 
     - 主：
       - 接收和处理客户端的请求（读和写请求）
-      - 将写入的信息广播给其他节点实现同步（如有A、B、C三个节点，A节点接收和处理了客户端的写请求，在A写完成之后将数据广播给B、C，B、C再写入该数据，这样三个节点的数据就同步了，在此A为Leader，B、C分别为Follower）
+      - 将写入的信息**广播**给其他节点实现同步（如有A、B、C三个节点，A节点接收和处理了客户端的写请求，在A写完成之后将数据广播给B、C，B、C再写入该数据，这样三个节点的数据就同步了，在此A为Leader，B、C分别为Follower）
     - 从：
       - 接收和处理客户端的**读请求**
       - 接收写请求，会将写请求转发给主节点（Leader）
@@ -360,7 +360,7 @@
     node3
     ```
 
-  - 根据机架感知计算DN离客户端的远近
+  - 根据**机架感知**计算DN离客户端的远近
 
   - 机架分配规则
 
@@ -368,19 +368,34 @@
     - 第二份会在另外一个机架中
     - 第三份与第二份同机架
 
+    ~~~java
+  # BlockPlacementPolicy.java
+    /**
+   * The class is responsible for choosing the desired number of targets
+     * for placing block replicas.
+   * The replica placement strategy is that if the writer is on a datanode,
+     * the 1st replica is placed on the local machine, 
+     * otherwise a random datanode. The 2nd replica is placed on a datanode
+   * that is on a different rack. The 3rd replica is placed on a datanode
+     * which is on a different node of the rack as the second replica.
+   */
+    ~~~
+
+    
+  
   - 5-客户端得到要写入数据块的三台DN地址，客户端会连接第一台【离它最近的那台】，提交写入
-
-  - 6-三台DN构建一个数据传输的管道
-
+  
+  - 6-三台DN构建一个数据传输的管道(Pipeline)
+  
   - 7-客户端将这个块拆分成多个packet【64k】，挨个发送个最近的这台DN1
-
+  
     - DN1会将这个包发送给DN2
     - DN2会将这个包发送给DN3
-
+  
   - 8-逐级返回写入成功的ack确认码，表示这个包写入完成
-
+  
   - 9-不断发送下一个包，直到整个块写入完成，返回给NameNode，关联元数据
-
+  
   - 重复3提交下一个块写入
 
 ##### 读：
@@ -388,12 +403,12 @@
 - 客户端提交读取请求给NameNode
 - NameNode会验证这个请求是否合法，如果合法，会查询元数据
   - 返回这个文件每个块对应 的所有存储地址
-  - BLk1：node1,node2,node3
-  - BLk2：node2,node3,node4
+  - BLK1：node1,node2,node3
+  - BLK2：node2,node3,node4
   - BLK3：node3,node4,node1
 - 客户端拿到列表，会根据机架感知从每个 块的列表中，选择离自己最近的节点去请求读取
-  - BLk1：node3
-  - BLk2：node4
+  - BLK1：node3
+  - BLK2：node4
   - BLK3：node4
 - 客户端会将所有块进行合并返回给用户
 
@@ -469,7 +484,7 @@
 
 #### **元数据安全**
 
-> NameNode启动会将元数据读入内存，在运行的过程中元数据的变化都会在内存中更改，由于内存中的元数据变化都没有被写入到本地元数据文件fsimage文件中，所以NameNode会将内存中的元数据变化写入到本地的edits文件中，预防元数据变化的丢失，在NameNode下一次启动时将edits文件中的数据写入fsimage文件中，但是又由于时间长了元数据变化量会非常大，edits文件的大小也会非常大，所以就需要定时将edits文件中的内容写入fsimage实现元数据的同步，这个定时同步的工作就是由SecondaryNameNode来做的。
+> NameNode启动会将元数据读入内存，在运行的过程中元数据的变化都会在内存中更改，由于内存中的元数据变化都没有被写入到本地元数据文件fsimage(FileSystemImage)文件中，所以NameNode会将内存中的元数据变化写入到本地的edits文件中，预防元数据变化的丢失，在NameNode下一次启动时将edits文件中的数据写入fsimage文件中，但是又由于时间长了元数据变化量会非常大，edits文件的大小也会非常大，所以就需要定时将edits文件中的内容写入fsimage实现元数据的同步(合并)，这个定时同步的工作就是由SecondaryNameNode来做的。
 
 - 管理
   - NameNode管理元数据，因为NameNode接受客户端请求，需要读写元数据
@@ -523,7 +538,7 @@
 
   - Java有自己的序列化机制，成为Java Object Serialization，该机制与编程语言紧密相关。
 
-  - Hadoop之父Doug Cutting是这样说的：“为什么开始设计Hadoop的时候不用Java Serialization？因为它**(Java Serialization)看起来太复杂，而我认为需要一个至精至简的机制，可以用于精确控制对象的读和写，这个机制将是Hadoop的核心**，使用Java Serialization虽然可以获得一些控制权，但用起来非常纠结。不用RMI(Remote Mwthod Invocation 远程方法调用)也处于类似的考虑。**高效、高性能的进程间通信是Hadoop的关键**。我觉得我们需要精确控制连接、延迟和缓冲的处理方式，RWI对此也无能为力。”
+  - Hadoop之父Doug Cutting是这样说的：“为什么开始设计Hadoop的时候不用Java Serialization？因为它**(Java Serialization)看起来太复杂，而我认为需要一个至精至简的机制，可以用于精确控制对象的读和写，这个机制将是Hadoop的核心**，使用Java Serialization虽然可以获得一些控制权，但用起来非常纠结。不用RMI(Remote Method Invocation 远程方法调用)也处于类似的考虑。**高效、高性能的进程间通信是Hadoop的关键**。我觉得我们需要精确控制连接、延迟和缓冲的处理方式，RWI对此也无能为力。”
 
   - 问题在于Java Serialization不满足Hadoop序列化格式标准：精简、快速、可扩展、支持互操作
 
@@ -700,9 +715,9 @@
   - 每个NodeManager都会拿到Container里面的信息
   - 自己要运行哪个Task，能用多少资源
 - 7-maptask运行结束会通知AppMaster，AppMaster通知ReduceTask
-  - 只要第一个MapTask运行结束，APPMaster就会通知ReduceTask过来拉取数据
-- 8-ReduceTask到每个MapTask中拉取数据，进行处理
+  - 只要第一个MapTask运行结束，APPMaster就会通知ReduceTask过来拉取(Fetch)数据
+- 8-ReduceTask到每个MapTask中拉取(Fetch)数据，进行处理
 - 9-ReduceTask将结果返回给APPMaster
-- 10-APPMaster将结果返回给客户端 和RM
+- 10-APPMaster将结果返回给客户端和RM
 
 ![YARN运行流程](./YARN运行流程.png)

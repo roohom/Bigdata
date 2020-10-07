@@ -1,6 +1,5 @@
 package ESHbaseIntergration;
 
-import javafx.scene.control.Tab;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -52,6 +51,7 @@ public class HbaseUtil {
 
     /**
      * 从Hbase读取数据
+     *
      * @param tbName 表名
      * @param rowkey rowkey
      * @param famliy 列族

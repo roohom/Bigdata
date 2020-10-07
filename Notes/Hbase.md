@@ -69,55 +69,62 @@
 - 内存：基于分布式内存，数据优先写入了机器的内存
   - 内存中的数据达到一定条件，会将内存的数据写入HDFS成为文件
 - NoSQL：每个NoSQL都有自己的特点
-- Hbase基于**列存储**，KV结构的数据库
+- Hbase基于**列存储**，**KV结构**的数据库
 
 ### 概念
 
-| 概念   | MySQL                                | HBase                                                        |
-| ------ | ------------------------------------ | ------------------------------------------------------------ |
-| 数据库 | database                             | namespace                                                    |
-| 表     | table                                | namespace:table                                              |
-| 行     | 主键：primary key                    | 行键：rowkey                                                 |
-| 列簇   | 无                                   | column family：对列的分组                                    |
-| 列     | column：每一行有多了，每一列是一致的 | column：每一行可以有多了，每一行的列可以不一样，任何一列必须属于某一个列簇，cf:colName |
-| 多版本 | 无                                   | VERSIONS，一列的值可以存储多个版本                           |
-| 时间戳 | 默认无，可以有                       | 默认有                                                       |
+| 概念   | MySQL                                  | HBase                                                        |
+| ------ | -------------------------------------- | ------------------------------------------------------------ |
+| 数据库 | database                               | namespace                                                    |
+| 表     | table                                  | namespace:table                                              |
+| 行     | 主键：primary key                      | 行键：rowkey                                                 |
+| 列族   | 无                                     | column family：对列的分组                                    |
+| 列     | column：每一行有多列，每一行列是一致的 | column：每一行可以有多列，每一行的列可以不一样，任何一列必须属于某一个列簇，cf:colName |
+| 多版本 | 无                                     | VERSIONS，一列的值可以存储多个版本                           |
+| 时间戳 | 默认无，可以有                         | 默认有                                                       |
 
 - Namespace：命名空间，就是MySQL中数据库的概念，用于区分数据存储
   - Hbase默认会自带两个namespace：default，Hbase
 - Table：表，区分更细的数据的划分
   - 任何一张表必须属于某一个namespace
-  - 除了default namespace下的表为，其他任何的namespace下的表在使用时都需要加namespace来访问，即`namespace:tableName`，namespace实际是表名的一部分
+  - 除了default namespace下的表为，其他任何的namespace下的表在使用时都需要加namespace来访问，即`namespace:tableName`，**namespace实际是表名的一部分**
 - Rowkey：行键，类似于MySQL中的主键
   - 功能：
     - 唯一标识一行的数据
-    - 构建索引【整个HBASE只有这一个索引，不能有其他索引】
+    - **构建索引**【整个HBASE只有这一个索引，不能有其他索引】
       - rowkey是HBASE的**唯一索引**
     - HBASE底层默认按照ASCII码【**字典顺序**】对Rowkey进行排序，以提高查询效率
       - 牺牲一定写的代价换取基于有序的高性能的查询
       - 决定了分区的规则
-  - 是HBASE中表非常特殊的一类，每张HBASE表都自带这一列，这一列不属于任何列簇
+  - 是HBASE中表非常特殊的一列，每张HBASE表都自带这一列，这一列不属于任何列簇
   - 难点：Rowkey的值由开发者自行设定
-    - Rowkey的值的设计决定了查询效率
-  - 问题：**只有按照RowKey查询才走索引查询，其他所有查询都直接走全表扫描？**
+    - **Rowkey的值的设计决定了查询效率**
+  - 问题：**只有按照RowKey查询才走索引查询，其他所有查询都直接走全表扫描(如何设计Rowkey让查询效率更高?)**
     - 解决：
-      - 将查询条件组合作为RowKey  =>  Rowkey的设计
+      - 将查询条件组合作为RowKey  =>  Rowkey的设计(rowkey默认是前缀匹配，如果前缀匹配不上，方法不奏效)
       - 二级索引：基于一级索引之上构建一层索引
+        - **利用ES构建二级索引**
+        - 举例：
+          - 例如按照标题实现对新闻数据的实时检索
+          - 将除了正文部分的数据列存储在ES中
+          - 将所有的新闻数据列存储在Hbase中
+          - HBASE中以新闻id作为rowkey，ES中以新闻id作为docId
+          - 根据标题去查询ES得到docId即对应于HBASE中的rowkey，以rowkey去查询HBASE
 - Column Family：列簇，对列进行分组
   - 分组是为了提高性能，减少查询数据时的比较
   - 如何分组？
     - 组名自定义，可以任意，一般有标识度即可
-    - 将拥有相似IO属性的列放在一组
+    - **将拥有相似IO属性的列放在一组**
     - 两组
       - CF1：经常被读写的列放在一组
       - CF2：不经常被读写的列
 - Column：列，类似于MySQL中的列
   - HBASE中每个Rowkey，可以拥有不用的列
-  - 除了Rowkey，任何一列都必须属于某一个列簇
+  - 除了Rowkey，任何一列都必须属于某一个列族
   - 引用列`cf:colName`
 - VERSIONS：多版本，HBASE中允许一列存储多个版本的值
   - **列簇级别**
-    - 如果配置某个列簇的版本个数为2，那么此列簇下所有的单元都具有2个版本
+    - 如果配置某个列族的版本个数为2，那么此列族下所有的单元都具有2个版本
   - HBASE允许存储历史版本的值，行和列相交是单元格组
   - 默认HBASE查询时，默认会返回最新的值(默认版本数为1)
   - 如何区分一列的多个版本的值？
@@ -139,7 +146,7 @@
   - 插入：put
     - put每次只能为某一行插入一列
 - **设计思想？为什么这么设计成列存储呢？**
-  - 优点：直接基于列进行读写，提高查询的性能
+  - 优点：**直接基于列进行读写，提高查询的性能**
   - 按行存储
     - 先读取所有符合条件的行，再进行对列的过滤
   - 按列存储
@@ -148,13 +155,13 @@
 ## HBASE架构
 
 - 分布式主从架构
-  - Hmaster：主节点，负责管理类操作
+  - HMaster：主节点，负责管理类操作
   - HRegionServer：从节点，有多台，用于构建分布式内存
     - HBASE是一个数据库，将一条数据写入HBASE，如何实现分布式存储？
     - 分的规则：将一张表划分成多个region，不同的region分布在不同的RegionServer中
       - HBASE中分区的规则
         - 写入一条数据根据分区规则，决定写入哪个分区，写入到对应分区所在的regionServer上
-      - 类似：将一个文件拆分成多个块，讲不同的块存储在不同的DN上
+      - 类似：将一个文件拆分成多个块，将不同的块存储在不同的DN上
 - HDFS：是按HBASE底层基于数据磁盘持久化的存储
   - 达到一定的条件，HRegionServer内存总存储的数据会Flush到HDFS上存储为文件
 - Zookeeper
@@ -381,7 +388,7 @@
   - 一个RegionServer可以管理多个region
   - **如何决定数据会写入一张表的哪一个Region中?分区规则是什么？**
     - 分区规则：
-      - 整个HBASE中的所有数据都是按照**字典顺序【ASCII码的前缀诸位比较**】进行排序的，所有数据存储时每个分区都有一个范围
+      - 整个HBASE中的所有数据都是按照**字典顺序【ASCII码的前缀逐位比较**】进行排序的，所有数据存储时每个分区都有一个范围
         - startKey
         - endKey
       - 规则：按照rowkey所属的范围来决定写入哪个分区
@@ -420,6 +427,15 @@
 
 ![WriteHbase](.\ReadAndWriteHbase\WriteHbase.png)
 
+~~~
+默认情况下，执行写入时会写到两个地方：预写式日志（write-ahead log,也称HLog）和MemStore。Hbase默认方式是把写入动作记录在这两个地方，以保证数据持久化。只有当这两个地方的变化信息都写入并确认后，才认为写动作完成。
+MemStore是内存里的写入缓冲区，HBase中数据在永久写入磁盘之前在这里累积。当Memstore填满后，其中的数据会刷写到硬盘，生成一个HFile。HFile是HBase使用的底层存储格式。HFile对应于列族，一个列族可以有多个HFile，但一个HFile不能存储多个列族的数据。在集群的每个节点上，每个列族有一个Memstore。
+大型分布式系统中硬件故障很常见，HBase也不例外。如果MemStore还没有刷写，服务器就崩溃了，内存中没有写入硬盘的数据就会丢失。应对办法是在写动作完成之前先写入WAL。HBase集群中每台服务器都维护一个WAL来记录发生的变化。WAL是底层文件系统上的一个文件。直到WAL新记录成功写入后，写动作才被认为成功完成。
+如果Hbase服务器宕机，没有从MemStore中刷写到HFile的数据可以通过回访WAL来恢复。不需要手动执行。
+~~~
+
+
+
 - Step1：根据表名找到这张表对应的所有Region信息
   - **问：怎么能得到表所对应的所有的Region信息？**
     - 通过元数据来获取
@@ -433,15 +449,16 @@
   - **问：如何能知道Meta表所对应的region位置？**
     - meta表所对应的region信息都记录在zookeeper中
   - HBASE中所有的客户端都要先连接zookeeper
-  
 - Step2：根据Rowkey以及表的region起始范围进行比较，得到要写入的region
 - Step3：将写入请求提交给这个region所在的regionServer
   - **问：如何能知道这个region所在的regionserver是哪个？**
     - 通过元数据来获取这个region所对应的regionserver的地址
 - Step4：regionserver将输入写入对应的region，根据列族判断写入哪个Store
 - Step5：**先写WAL(HLog)**，然后将数据写入MemStore
+  - **问题：为什么要先写HLog，而后再写MemStore呢？**
+  - 答：**为了防止数据丢失。**如果先写MemStore，写完成之后服务器就挂了，还没有写HLog，而MemStore是内存区域，挂了内存中的数据就丢失了，那么写入的数据也就丢失了。如果先写WAL(HLog)，也就记录了操作日志，当写完HLog和MemStore之后，即是内存数据丢失，也可以根据HLog中的操作日志，在其他HRegionServer中回放这些操作，保证数据的不丢失。
 - Step6：写入流程结束，返回客户端
-  - Flush：当menstore中的数据达到一定条件，会触发将内存中的数据刷写如HDFS变成Sorefile文件
+  - Flush：当Memstore中的数据达到一定条件，会触发将内存中的数据刷写如HDFS变成Sorefile文件
   - Compact：将多个storefile文件进行合并成大文件
     - Hbase没有删除和更新，删除和更新都是插入一条数据
     - 老的数据被标记为更新状态或者是删除状态
@@ -453,6 +470,14 @@
 #### 读取
 
 ![ReadHbase](.\ReadAndWriteHbase\ReadHbase.png)
+
+~~~
+如果想快速访问数据，通用的原则是数据保持有序且尽可能保存在内存里。HBase实现了这两个目标。HBase读动作必须重新衔接持久化到硬盘上的HFile和内存中MemStore里的数据。HBase在读操作上使用了LRU（最近最少使用算法）缓存技术。这种缓存也叫作BlockCache，和MemStore在一个JVM堆里。BlockCache设计用来保存从HFile里读入内存的频繁访问的数据，避免硬盘读。每个列族都有自己的BlockCache。
+掌握BlockCache是优化HBase性能的一个重要部分。BlockCache中的Block是HBase从硬盘完成一次读取的数据单位。HFile物理存放形式是一个Block的序列外加这些Block的索引。这意味着，从HBase中读取一个Block需要先查找一次该Block然后从硬盘读取。Block是建立索引的最小数据单位，也是从硬盘读取的最小数据单位。Block大小默认为64KB，如果主要用于随机查询，细粒度的Block更好。Block变小会导致索引变大，消耗更多内存。如果主要用于顺序扫描，一次读取多个Block，那个大一点的Block较好。
+从HBase中读出一行，首先检查MemStore，然后检查BlockCache，最后访问HFile。
+~~~
+
+
 
 - step1：根据表名从元数据获取对应的region信息
 - step2：
