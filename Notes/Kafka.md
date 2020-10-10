@@ -483,7 +483,7 @@ public class UserPartition implements Partitioner {
 
   - 读取.index文件内容，根据要查询的offset来计算出这个offset是index文件的第几条`要查询的offset-index文件的起始offset+1=要查询的offset在index文件中的位置(条数)`
 
-  - 根据获取到的条数据，在index文件中通过二分查找获取到这条数据在.log文件中的偏移量
+  - 根据获取到的条数据，在index文件中通过二分查找获取到这条数据在.log文件中的偏移量，依据偏移量去.log文件中到偏移量位置进行读取
 
 
 

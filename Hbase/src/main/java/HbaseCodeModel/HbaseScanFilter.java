@@ -1,4 +1,4 @@
-package HbaseTest;
+package HbaseCodeModel;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
